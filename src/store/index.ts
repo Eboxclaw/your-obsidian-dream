@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Note, KanbanBoard, KanbanCard, UIState, ViewMode } from '@/types';
+import type { Note, KanbanBoard, KanbanCard, UIState, ViewMode, OnboardingState, UserRole } from '@/types';
 
 const createId = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
