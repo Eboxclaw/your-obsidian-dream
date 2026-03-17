@@ -7,6 +7,7 @@ export interface Note {
   modified: string;
   parentId: string | null;
   isFolder: boolean;
+  isPrivate: boolean;
 }
 
 export interface WikiLink {
@@ -49,6 +50,39 @@ export type ViewMode = 'dashboard' | 'notebook' | 'kanban' | 'graph' | 'agent' |
 
 export type UserRole = 'general' | 'researcher' | 'writer' | 'pm' | 'developer' | 'analyst';
 
+export interface AgentConfig {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  active: boolean;
+}
+
+export interface AgentSkill {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface AgentRole {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface AgentMessage {
+  id: string;
+  role: 'user' | 'agent';
+  text: string;
+  timestamp: string;
+}
+
+export interface AgentSession {
+  id: string;
+  title: string;
+  messages: AgentMessage[];
+}
+
 export interface OnboardingState {
   completed: boolean;
   step: number;
@@ -66,4 +100,8 @@ export interface UIState {
   inspectorOpen: boolean;
   commandPaletteOpen: boolean;
   sidebarCollapsed: boolean;
+  fabOpen: boolean;
+  inlineAgentOpen: boolean;
+  activeAgentSessionId: string | null;
+  notesTab: 'all' | 'private';
 }

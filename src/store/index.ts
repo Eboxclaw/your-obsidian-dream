@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Note, KanbanBoard, KanbanCard, UIState, ViewMode, OnboardingState, UserRole } from '@/types';
+import type { Note, KanbanBoard, KanbanCard, UIState, ViewMode, OnboardingState, UserRole, AgentConfig, AgentSkill, AgentRole, AgentSession, AgentMessage } from '@/types';
 
 const createId = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
@@ -8,31 +8,13 @@ const now = () => new Date().toISOString();
 const WELCOME_NOTE: Note = {
   id: 'welcome',
   title: 'Welcome to ViBo',
-  content: `# Welcome to ViBo
-
-Your second brain starts here. This is a **markdown-first** notebook with wikilinks, backlinks, and kanban boards.
-
-## Getting Started
-
-- Create notes with \`Cmd+N\`
-- Open command palette with \`Cmd+K\`
-- Link notes with \`[[wikilinks]]\`
-- Organize work on the Kanban board
-
-## Features
-
-- Full markdown editing with live preview
-- Bidirectional linking between notes
-- Kanban boards with draggable cards
-- Quick capture from the dashboard
-
-> "The mind is not a vessel to be filled, but a fire to be kindled."
-`,
+  content: `# Welcome to ViBo\n\nYour second brain starts here. This is a **markdown-first** notebook with wikilinks, backlinks, and kanban boards.\n\n## Getting Started\n\n- Create notes with \`Cmd+N\`\n- Open command palette with \`Cmd+K\`\n- Link notes with \`[[wikilinks]]\`\n- Organize work on the Kanban board\n\n> "The mind is not a vessel to be filled, but a fire to be kindled."\n`,
   tags: ['getting-started'],
   created: now(),
   modified: now(),
   parentId: null,
   isFolder: false,
+  isPrivate: false,
 };
 
 const DEFAULT_BOARD: KanbanBoard = {
@@ -64,10 +46,25 @@ const DEFAULT_CARDS: KanbanCard[] = [
   },
 ];
 
+const DEFAULT_AGENTS: AgentConfig[] = [
+  { id: 'assistant', name: 'General Assistant', description: 'Helps with notes, tasks, and brainstorming', icon: 'bot', active: true },
+  { id: 'researcher', name: 'Research Agent', description: 'Summarizes and analyzes your notes', icon: 'search', active: true },
+];
+
+const DEFAULT_SESSIONS: AgentSession[] = [
+  {
+    id: 'session-1',
+    title: 'Session 1',
+    messages: [
+      { id: 'welcome-msg', role: 'agent', text: "Hey! I can help you create notes, tasks, or just chat. What would you like to do?", timestamp: now() },
+    ],
+  },
+];
+
 interface AppStore {
   // Notes
   notes: Note[];
-  addNote: (title: string, parentId?: string | null) => Note;
+  addNote: (title: string, parentId?: string | null, isPrivate?: boolean) => Note;
   updateNote: (id: string, updates: Partial<Note>) => void;
   deleteNote: (id: string) => void;
   getNoteById: (id: string) => Note | undefined;
@@ -85,6 +82,20 @@ interface AppStore {
   deleteColumn: (boardId: string, columnId: string) => void;
   renameColumn: (boardId: string, columnId: string, title: string) => void;
 
+  // Agents
+  agents: AgentConfig[];
+  skills: AgentSkill[];
+  roles: AgentRole[];
+  agentSessions: AgentSession[];
+  addAgent: (name: string, description: string) => void;
+  toggleAgent: (id: string) => void;
+  removeAgent: (id: string) => void;
+  addSkill: (name: string, description: string) => void;
+  addRole: (name: string, description: string) => void;
+  addAgentSession: () => AgentSession;
+  removeAgentSession: (id: string) => void;
+  addMessageToSession: (sessionId: string, msg: AgentMessage) => void;
+
   // UI
   ui: UIState;
   setView: (view: ViewMode) => void;
@@ -93,6 +104,10 @@ interface AppStore {
   toggleInspector: () => void;
   toggleCommandPalette: () => void;
   toggleSidebar: () => void;
+  toggleFab: () => void;
+  toggleInlineAgent: () => void;
+  setActiveAgentSession: (id: string | null) => void;
+  setNotesTab: (tab: 'all' | 'private') => void;
 
   // Onboarding
   onboarding: OnboardingState;
@@ -105,7 +120,7 @@ export const useStore = create<AppStore>()(
     (set, get) => ({
       notes: [WELCOME_NOTE],
 
-      addNote: (title, parentId = null) => {
+      addNote: (title, parentId = null, isPrivate = false) => {
         const note: Note = {
           id: createId(),
           title,
@@ -115,6 +130,7 @@ export const useStore = create<AppStore>()(
           modified: now(),
           parentId,
           isFolder: false,
+          isPrivate,
         };
         set((s) => ({ notes: [...s.notes, note] }));
         return note;
@@ -176,9 +192,7 @@ export const useStore = create<AppStore>()(
                   ...b,
                   modified: now(),
                   columns: b.columns.map((c) =>
-                    c.id === columnId
-                      ? { ...c, cardIds: [...c.cardIds, card.id] }
-                      : c
+                    c.id === columnId ? { ...c, cardIds: [...c.cardIds, card.id] } : c
                   ),
                 }
               : b
@@ -234,10 +248,7 @@ export const useStore = create<AppStore>()(
         set((s) => ({
           boards: s.boards.map((b) =>
             b.id === boardId
-              ? {
-                  ...b,
-                  columns: [...b.columns, { id: createId(), title, cardIds: [] }],
-                }
+              ? { ...b, columns: [...b.columns, { id: createId(), title, cardIds: [] }] }
               : b
           ),
         })),
@@ -268,6 +279,61 @@ export const useStore = create<AppStore>()(
           ),
         })),
 
+      // Agents
+      agents: DEFAULT_AGENTS,
+      skills: [],
+      roles: [],
+      agentSessions: DEFAULT_SESSIONS,
+
+      addAgent: (name, description) =>
+        set((s) => ({
+          agents: [...s.agents, { id: createId(), name, description, icon: 'bot', active: true }],
+        })),
+
+      toggleAgent: (id) =>
+        set((s) => ({
+          agents: s.agents.map((a) => (a.id === id ? { ...a, active: !a.active } : a)),
+        })),
+
+      removeAgent: (id) =>
+        set((s) => ({ agents: s.agents.filter((a) => a.id !== id) })),
+
+      addSkill: (name, description) =>
+        set((s) => ({ skills: [...s.skills, { id: createId(), name, description }] })),
+
+      addRole: (name, description) =>
+        set((s) => ({ roles: [...s.roles, { id: createId(), name, description }] })),
+
+      addAgentSession: () => {
+        const session: AgentSession = {
+          id: createId(),
+          title: `Session ${get().agentSessions.length + 1}`,
+          messages: [
+            { id: createId(), role: 'agent', text: "Hey! How can I help you?", timestamp: now() },
+          ],
+        };
+        set((s) => ({
+          agentSessions: [...s.agentSessions, session].slice(-5),
+          ui: { ...s.ui, activeAgentSessionId: session.id },
+        }));
+        return session;
+      },
+
+      removeAgentSession: (id) =>
+        set((s) => ({
+          agentSessions: s.agentSessions.filter((ss) => ss.id !== id),
+          ui: s.ui.activeAgentSessionId === id
+            ? { ...s.ui, activeAgentSessionId: s.agentSessions[0]?.id ?? null }
+            : s.ui,
+        })),
+
+      addMessageToSession: (sessionId, msg) =>
+        set((s) => ({
+          agentSessions: s.agentSessions.map((ss) =>
+            ss.id === sessionId ? { ...ss, messages: [...ss.messages, msg] } : ss
+          ),
+        })),
+
       // UI
       ui: {
         activeView: 'dashboard' as ViewMode,
@@ -276,23 +342,22 @@ export const useStore = create<AppStore>()(
         inspectorOpen: true,
         commandPaletteOpen: false,
         sidebarCollapsed: false,
+        fabOpen: false,
+        inlineAgentOpen: false,
+        activeAgentSessionId: 'session-1',
+        notesTab: 'all' as const,
       },
 
       setView: (view) => set((s) => ({ ui: { ...s.ui, activeView: view } })),
-      setActiveNote: (id) =>
-        set((s) => ({ ui: { ...s.ui, activeNoteId: id } })),
-      setActiveBoard: (id) =>
-        set((s) => ({ ui: { ...s.ui, activeBoardId: id } })),
-      toggleInspector: () =>
-        set((s) => ({ ui: { ...s.ui, inspectorOpen: !s.ui.inspectorOpen } })),
-      toggleCommandPalette: () =>
-        set((s) => ({
-          ui: { ...s.ui, commandPaletteOpen: !s.ui.commandPaletteOpen },
-        })),
-      toggleSidebar: () =>
-        set((s) => ({
-          ui: { ...s.ui, sidebarCollapsed: !s.ui.sidebarCollapsed },
-        })),
+      setActiveNote: (id) => set((s) => ({ ui: { ...s.ui, activeNoteId: id } })),
+      setActiveBoard: (id) => set((s) => ({ ui: { ...s.ui, activeBoardId: id } })),
+      toggleInspector: () => set((s) => ({ ui: { ...s.ui, inspectorOpen: !s.ui.inspectorOpen } })),
+      toggleCommandPalette: () => set((s) => ({ ui: { ...s.ui, commandPaletteOpen: !s.ui.commandPaletteOpen } })),
+      toggleSidebar: () => set((s) => ({ ui: { ...s.ui, sidebarCollapsed: !s.ui.sidebarCollapsed } })),
+      toggleFab: () => set((s) => ({ ui: { ...s.ui, fabOpen: !s.ui.fabOpen } })),
+      toggleInlineAgent: () => set((s) => ({ ui: { ...s.ui, inlineAgentOpen: !s.ui.inlineAgentOpen } })),
+      setActiveAgentSession: (id) => set((s) => ({ ui: { ...s.ui, activeAgentSessionId: id } })),
+      setNotesTab: (tab) => set((s) => ({ ui: { ...s.ui, notesTab: tab } })),
 
       // Onboarding
       onboarding: {

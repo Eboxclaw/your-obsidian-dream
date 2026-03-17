@@ -1,148 +1,153 @@
 import { useState } from 'react';
 import { useStore } from '@/store';
-import { useLinkCount } from '@/hooks/use-wikilinks';
 import { format } from 'date-fns';
-import { ArrowRight, Plus } from 'lucide-react';
+import { FileText, CheckSquare, Bot, GitFork } from 'lucide-react';
 
 export function Dashboard() {
-  const { notes, boards, cards, addNote, setActiveNote, setView, setActiveBoard } = useStore();
-  const linkCount = useLinkCount();
-  const [quickTitle, setQuickTitle] = useState('');
+  const { notes, boards, cards, agents, setActiveNote, setView, setActiveBoard, onboarding } = useStore();
+  const [tab, setTab] = useState<'notes' | 'tasks'>('notes');
 
   const recentNotes = [...notes]
     .sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime())
-    .slice(0, 8);
+    .slice(0, 5);
 
-  const handleQuickCapture = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && quickTitle.trim()) {
-      const note = addNote(quickTitle.trim());
-      setQuickTitle('');
-      setActiveNote(note.id);
-      setView('notebook');
-    }
-  };
+  const totalTasks = cards.length;
+  const doneTasks = cards.filter((c) => {
+    const board = boards.find((b) => b.id === c.boardId);
+    if (!board) return false;
+    const doneCol = board.columns.find((col) => col.title.toLowerCase() === 'done');
+    return doneCol?.cardIds.includes(c.id);
+  }).length;
+  const pendingTasks = totalTasks - doneTasks;
+  const activeAgents = agents.filter((a) => a.active).length;
 
-  const lastEdited = notes.length > 0
-    ? format(new Date(Math.max(...notes.map((n) => new Date(n.modified).getTime()))), 'MMM d, h:mm a')
-    : 'Never';
+  const greeting = onboarding.name || 'there';
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16">
+    <div className="mx-auto max-w-lg px-5 py-8 space-y-5">
       {/* Greeting */}
-      <div className="mb-12">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}
+      <div>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
+          {greeting}, <span className="text-muted-foreground font-normal">{onboarding.workspaceName}</span>
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Your workspace is ready.
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {notes.length} notes · {totalTasks} tasks · All systems local
         </p>
       </div>
 
-      {/* Quick capture */}
-      <div className="mb-12">
-        <div className="flex items-center gap-2 rounded-md border bg-surface px-3 py-2.5 focus-within:border-primary aether-transition">
-          <Plus className="h-4 w-4 text-muted-foreground" />
-          <input
-            value={quickTitle}
-            onChange={(e) => setQuickTitle(e.target.value)}
-            onKeyDown={handleQuickCapture}
-            placeholder="Quick capture — type a title, press Enter"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            autoFocus
-          />
+      {/* Today's Tasks */}
+      <div className="rounded-2xl border bg-card p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Today's Tasks</p>
+            <p className="text-2xl font-bold text-foreground mt-1">{pendingTasks}</p>
+            <p className="text-[10px] text-muted-foreground">pending</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-foreground">{doneTasks}/{totalTasks}</p>
+            <p className="text-[10px] text-muted-foreground">completed</p>
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="mb-12 flex gap-8">
-        <div>
-          <span className="font-mono text-lg font-semibold tabular-nums text-foreground">
-            {notes.length.toLocaleString()}
-          </span>
-          <span className="ml-1.5 text-xs text-muted-foreground">notes</span>
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-2xl border bg-card p-3 text-center">
+          <FileText className="h-5 w-5 mx-auto text-primary mb-1" />
+          <p className="text-lg font-bold text-foreground">{notes.length}</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Notes</p>
         </div>
-        <div>
-          <span className="font-mono text-lg font-semibold tabular-nums text-foreground">
-            {linkCount.toLocaleString()}
-          </span>
-          <span className="ml-1.5 text-xs text-muted-foreground">links</span>
+        <div className="rounded-2xl border bg-card p-3 text-center">
+          <CheckSquare className="h-5 w-5 mx-auto text-primary mb-1" />
+          <p className="text-lg font-bold text-foreground">{totalTasks}</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Tasks</p>
         </div>
-        <div>
-          <span className="font-mono text-lg font-semibold tabular-nums text-foreground">
-            {boards.length}
-          </span>
-          <span className="ml-1.5 text-xs text-muted-foreground">boards</span>
-        </div>
-        <div className="ml-auto text-xs text-muted-foreground">
-          Last edited {lastEdited}
+        <div className="rounded-2xl border bg-card p-3 text-center">
+          <Bot className="h-5 w-5 mx-auto text-primary mb-1" />
+          <p className="text-lg font-bold text-foreground">{activeAgents}</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Agents</p>
         </div>
       </div>
 
-      {/* Recent notes */}
-      <div className="mb-10">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Recent Notes
-          </h2>
-          <button
-            onClick={() => setView('notebook')}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground aether-transition"
-          >
-            View all <ArrowRight className="h-3 w-3" />
-          </button>
+      {/* Graph preview */}
+      <div className="rounded-2xl border bg-card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <GitFork className="h-4 w-4 text-muted-foreground" />
+          <p className="text-xs font-medium text-foreground">Knowledge Graph</p>
         </div>
-        <div className="space-y-px">
-          {recentNotes.map((note) => (
-            <button
-              key={note.id}
-              onClick={() => {
-                setActiveNote(note.id);
-                setView('notebook');
-              }}
-              className="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left hover:bg-surface aether-transition"
-            >
-              <span className="text-sm text-foreground">{note.title}</span>
-              <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                {format(new Date(note.modified), 'MMM d')}
-              </span>
-            </button>
-          ))}
+        <div className="flex h-24 items-center justify-center rounded-xl bg-muted/50">
+          <p className="text-xs text-muted-foreground">
+            {notes.length <= 1 ? 'No notes yet — create some to see your graph' : `${notes.length} nodes connected`}
+          </p>
         </div>
       </div>
 
-      {/* Boards */}
+      {/* Recent tabs */}
       <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Active Boards
-          </h2>
+        <div className="flex gap-4 mb-3">
           <button
-            onClick={() => setView('kanban')}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground aether-transition"
+            onClick={() => setTab('notes')}
+            className={`text-xs font-medium pb-1 border-b-2 aether-transition ${
+              tab === 'notes' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground'
+            }`}
           >
-            View all <ArrowRight className="h-3 w-3" />
+            Recent Notes
+          </button>
+          <button
+            onClick={() => setTab('tasks')}
+            className={`text-xs font-medium pb-1 border-b-2 aether-transition ${
+              tab === 'tasks' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground'
+            }`}
+          >
+            Recent Tasks
           </button>
         </div>
-        <div className="space-y-px">
-          {boards.map((board) => {
-            const cardCount = cards.filter((c) => c.boardId === board.id).length;
-            return (
-              <button
-                key={board.id}
-                onClick={() => {
-                  setActiveBoard(board.id);
-                  setView('kanban');
-                }}
-                className="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left hover:bg-surface aether-transition"
-              >
-                <span className="text-sm text-foreground">{board.title}</span>
-                <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                  {cardCount} cards · {board.columns.length} cols
-                </span>
-              </button>
-            );
-          })}
-        </div>
+
+        {tab === 'notes' ? (
+          <div className="space-y-1">
+            {recentNotes.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">No notes yet</p>
+            ) : (
+              recentNotes.map((note) => (
+                <button
+                  key={note.id}
+                  onClick={() => { setActiveNote(note.id); setView('notebook'); }}
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover aether-transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-sm text-foreground">{note.title}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {format(new Date(note.modified), 'MMM d')}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {cards.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">No tasks yet</p>
+            ) : (
+              cards.slice(0, 5).map((card) => (
+                <button
+                  key={card.id}
+                  onClick={() => { setActiveBoard(card.boardId); setView('kanban'); }}
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover aether-transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <CheckSquare className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-sm text-foreground">{card.title}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {format(new Date(card.created), 'MMM d')}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
