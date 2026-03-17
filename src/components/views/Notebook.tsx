@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useStore } from '@/store';
 import { NoteEditor } from '@/components/editor/NoteEditor';
-import { FileText, Lock, Search, ArrowLeft } from 'lucide-react';
+import { FileText, Lock, Search, ArrowLeft, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function Notebook() {
-  const { ui, notes, setActiveNote, setNotesTab } = useStore();
+  const { ui, notes, addNote, setActiveNote, setNotesTab } = useStore();
   const [search, setSearch] = useState('');
   const [pinInput, setPinInput] = useState('');
   const [unlocked, setUnlocked] = useState(false);
@@ -38,6 +38,11 @@ export function Notebook() {
     .filter((n) => (isPrivateTab ? n.isPrivate : !n.isPrivate))
     .filter((n) => !search || n.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime());
+
+  const handleNewNote = () => {
+    const note = addNote(isPrivateTab ? 'Private Note' : 'Untitled', null, isPrivateTab);
+    setActiveNote(note.id);
+  };
 
   // PIN gate for private notes
   if (isPrivateTab && !unlocked) {
@@ -119,6 +124,17 @@ export function Notebook() {
         </div>
       </div>
 
+      {/* Inline create button */}
+      <div className="px-4 pb-1">
+        <button
+          onClick={handleNewNote}
+          className="flex w-full items-center gap-2 rounded-xl border border-dashed px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:border-primary aether-transition"
+        >
+          <Plus className="h-4 w-4" />
+          <span>New {isPrivateTab ? 'Private ' : ''}Note</span>
+        </button>
+      </div>
+
       {/* Notes list */}
       <div className="flex-1 overflow-auto px-4 py-1">
         {filteredNotes.length === 0 ? (
@@ -132,7 +148,7 @@ export function Notebook() {
               <button
                 key={note.id}
                 onClick={() => setActiveNote(note.id)}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left hover:bg-surface-hover aether-transition group"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left hover:bg-surface-hover ghost-card aether-transition group"
               >
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted shrink-0">
                   {note.isPrivate ? (

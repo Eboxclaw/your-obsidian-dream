@@ -13,6 +13,7 @@ import { FABMenu } from '@/components/layout/FABMenu';
 import { InlineAgent } from '@/components/layout/InlineAgent';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { Search } from 'lucide-react';
+import logoSvg from '@/assets/logo.svg';
 
 export function AppShell() {
   const { ui, onboarding, toggleCommandPalette, addNote, setActiveNote, setView } = useStore();
@@ -57,7 +58,12 @@ export function AppShell() {
     <div className="flex h-screen flex-col bg-background overflow-hidden">
       {/* Top bar */}
       <header className="flex h-11 shrink-0 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <img
+            src={logoSvg}
+            alt="ViBo"
+            className="h-6 w-6 logo-glow ghost-float"
+          />
           <span className="text-sm font-semibold tracking-tight text-foreground">
             {viewTitle}
           </span>
@@ -86,14 +92,14 @@ export function AppShell() {
         {ui.activeView === 'settings' && <SettingsView />}
       </main>
 
-      {/* Inline Agent */}
-      <InlineAgent />
+      {/* Bottom section: FAB floats above InlineAgent */}
+      <div className="relative shrink-0">
+        <FABMenu />
+        <InlineAgent />
+      </div>
 
       {/* Bottom navigation */}
       <BottomNav />
-
-      {/* FAB */}
-      <FABMenu />
 
       {/* Command palette */}
       {ui.commandPaletteOpen && <CommandPalette />}
