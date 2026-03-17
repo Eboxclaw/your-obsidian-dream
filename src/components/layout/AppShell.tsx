@@ -6,6 +6,9 @@ import { Dashboard } from '@/components/views/Dashboard';
 import { Notebook } from '@/components/views/Notebook';
 import { KanbanView } from '@/components/views/KanbanView';
 import { GraphView } from '@/components/views/GraphView';
+import { AgentView } from '@/components/views/AgentView';
+import { TemplatesView } from '@/components/views/TemplatesView';
+import { SettingsView } from '@/components/views/SettingsView';
 import { CommandPalette } from '@/components/CommandPalette';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
@@ -107,6 +110,9 @@ export function AppShell() {
           {ui.activeView === 'notebook' && <Notebook />}
           {ui.activeView === 'kanban' && <KanbanView />}
           {ui.activeView === 'graph' && <GraphView />}
+          {ui.activeView === 'agent' && <AgentView />}
+          {ui.activeView === 'templates' && <TemplatesView />}
+          {ui.activeView === 'settings' && <SettingsView />}
         </main>
 
         {showInspector && (

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/store';
-import { Search, FileText, LayoutDashboard, BookOpen, Columns3, Plus, GitFork } from 'lucide-react';
+import { Search, FileText, LayoutDashboard, BookOpen, Columns3, Plus, GitFork, Bot, FileStack, Settings } from 'lucide-react';
 
 export function CommandPalette() {
   const {
@@ -32,6 +32,9 @@ export function CommandPalette() {
     { id: 'nav-note', label: 'Notebook', sublabel: 'Navigate', icon: BookOpen, action: () => { setView('notebook'); toggleCommandPalette(); } },
     { id: 'nav-kanban', label: 'Kanban', sublabel: 'Navigate', icon: Columns3, action: () => { setView('kanban'); toggleCommandPalette(); } },
     { id: 'nav-graph', label: 'Graph View', sublabel: 'Navigate', icon: GitFork, action: () => { setView('graph'); toggleCommandPalette(); } },
+    { id: 'nav-templates', label: 'Templates', sublabel: 'Navigate', icon: FileStack, action: () => { setView('templates'); toggleCommandPalette(); } },
+    { id: 'nav-agent', label: 'Agent', sublabel: 'Navigate', icon: Bot, action: () => { setView('agent'); toggleCommandPalette(); } },
+    { id: 'nav-settings', label: 'Settings', sublabel: 'Navigate', icon: Settings, action: () => { setView('settings'); toggleCommandPalette(); } },
     { id: 'new-note', label: 'New Note', sublabel: 'Action', icon: Plus, action: () => { const n = addNote('Untitled'); setActiveNote(n.id); setView('notebook'); toggleCommandPalette(); } },
   );
 
