@@ -93,6 +93,11 @@ interface AppStore {
   toggleInspector: () => void;
   toggleCommandPalette: () => void;
   toggleSidebar: () => void;
+
+  // Onboarding
+  onboarding: OnboardingState;
+  setOnboarding: (data: Partial<OnboardingState>) => void;
+  completeOnboarding: () => void;
 }
 
 export const useStore = create<AppStore>()(
