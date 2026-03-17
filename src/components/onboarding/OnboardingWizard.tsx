@@ -2,283 +2,395 @@ import { useState } from 'react';
 import { useStore } from '@/store';
 import type { UserRole } from '@/types';
 import {
-  User,
-  FlaskConical,
-  PenTool,
-  BarChart3,
-  Code2,
-  Briefcase,
   ChevronRight,
   ChevronLeft,
-  Check,
+  Fingerprint,
+  KeyRound,
+  Shield,
+  Calendar,
+  Mail,
+  Cpu,
+  Bot,
+  Code2,
+  PenTool,
+  Target,
+  Sparkles,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import logoSvg from '@/assets/logo.svg';
+import { SmokeParticles } from '@/components/effects/SmokeParticles';
 
-const ROLES: {
-  id: UserRole;
-  label: string;
-  desc: string;
-  icon: typeof User;
-}[] = [
-  { id: 'general', label: 'General', desc: 'Flexible workspace for everyday use', icon: User },
-  { id: 'researcher', label: 'Researcher', desc: 'Deep linking, literature notes, citations', icon: FlaskConical },
-  { id: 'writer', label: 'Writer', desc: 'Distraction-free writing, drafts, publishing', icon: PenTool },
-  { id: 'pm', label: 'Project Manager', desc: 'Kanban boards, timelines, team tracking', icon: Briefcase },
-  { id: 'developer', label: 'Developer', desc: 'Code snippets, architecture docs, debugging logs', icon: Code2 },
-  { id: 'analyst', label: 'Analyst', desc: 'Data notes, queries, dashboards, reports', icon: BarChart3 },
+type SecurityMethod = 'biometrics' | 'pin' | 'passphrase';
+type AgentPreset = 'manager' | 'assistant' | 'code' | 'writer';
+
+const LOCAL_MODELS = [
+  { id: 'lfm-instruct', name: 'LFM 2.5 Instruct', desc: 'General-purpose text model for on-device deployment. Fast and efficient.', size: '720 MB' },
+  { id: 'lfm-thinking', name: 'LFM 2.5 Thinking', desc: 'Excels at instruction following, tool-use, math, agentic tasks and RAG.', size: '720 MB' },
 ];
 
-const THEMES = [
-  { id: 'dark' as const, label: 'Dark', color: 'hsl(270, 20%, 6%)' },
-  { id: 'midnight' as const, label: 'Midnight', color: 'hsl(270, 25%, 4%)' },
-  { id: 'abyss' as const, label: 'Abyss', color: 'hsl(270, 30%, 3%)' },
+const INTEGRATIONS = [
+  { id: 'calendar', name: 'Calendar', desc: 'Sync events & reminders', icon: Calendar },
+  { id: 'gmail', name: 'Gmail', desc: 'Email integration', icon: Mail },
 ];
 
-const FEATURES = [
-  { id: 'wikilinks', label: 'Wikilinks & Backlinks' },
-  { id: 'kanban', label: 'Kanban Boards' },
-  { id: 'graph', label: 'Graph View' },
-  { id: 'daily', label: 'Daily Notes' },
-  { id: 'templates', label: 'Note Templates' },
-  { id: 'ai', label: 'AI Assistant' },
+const SECURITY_OPTIONS: { id: SecurityMethod; name: string; desc: string; icon: typeof Fingerprint }[] = [
+  { id: 'biometrics', name: 'Biometrics', desc: 'Face ID / Fingerprint', icon: Fingerprint },
+  { id: 'pin', name: 'Numeric PIN', desc: '4-6 digit code', icon: KeyRound },
+  { id: 'passphrase', name: 'Passphrase', desc: 'Word-based password', icon: Shield },
+];
+
+const AGENT_PRESETS: { id: AgentPreset; name: string; desc: string; icon: typeof Bot; emoji: string }[] = [
+  { id: 'manager', name: 'Manager', desc: 'Coordinates tasks and delegates work', icon: Target, emoji: '🎯' },
+  { id: 'assistant', name: 'Assistant', desc: 'General-purpose help and note-taking', icon: Sparkles, emoji: '✨' },
+  { id: 'code', name: 'Code Assistant', desc: 'Programming help and code review', icon: Code2, emoji: '💻' },
+  { id: 'writer', name: 'Content Writer', desc: 'Writing, editing, and summarizing', icon: PenTool, emoji: '✍️' },
 ];
 
 export function OnboardingWizard() {
-  const { onboarding, setOnboarding, completeOnboarding } = useStore();
+  const { setOnboarding, completeOnboarding } = useStore();
   const [step, setStep] = useState(0);
-  const [name, setName] = useState(onboarding.name);
-  const [role, setRole] = useState<UserRole | null>(onboarding.role);
-  const [workspaceName, setWorkspaceName] = useState(onboarding.workspaceName || 'My Vault');
-  const [theme, setTheme] = useState<'dark' | 'midnight' | 'abyss'>(onboarding.theme || 'dark');
-  const [features, setFeatures] = useState<string[]>(onboarding.features || ['wikilinks', 'kanban', 'graph']);
 
-  const toggleFeature = (id: string) => {
-    setFeatures((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]));
+  // Step data
+  const [selectedModel, setSelectedModel] = useState('lfm-instruct');
+  const [integrations, setIntegrations] = useState<Record<string, boolean>>({});
+  const [security, setSecurity] = useState<SecurityMethod>('biometrics');
+  const [agent, setAgent] = useState<AgentPreset>('assistant');
+  const [name, setName] = useState('');
+  const [pin, setPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
+  const [showPinStep, setShowPinStep] = useState(false);
+
+  const totalSteps = 5;
+
+  const toggleIntegration = (id: string) => {
+    setIntegrations((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const canProceed = () => {
-    if (step === 0) return name.trim().length > 0;
-    if (step === 1) return role !== null;
-    if (step === 2) return workspaceName.trim().length > 0;
+    if (step === 5) return name.trim().length > 0;
     return true;
   };
 
   const handleNext = () => {
-    if (step < 4) {
+    if (step === 0) {
+      setStep(1);
+    } else if (step < 5) {
       setStep(step + 1);
+    } else if (step === 5 && !showPinStep) {
+      setShowPinStep(true);
     } else {
-      setOnboarding({ name, role: role!, workspaceName, theme, features });
+      setOnboarding({
+        name,
+        role: 'general' as UserRole,
+        workspaceName: 'My Vault',
+        theme: 'dark',
+        features: ['wikilinks', 'kanban', 'graph', 'ai'],
+      });
       completeOnboarding();
     }
   };
 
-  const stepLabels = ['Welcome', 'Role', 'Workspace', 'Theme', 'Ready'];
+  // Welcome splash (step 0)
+  if (step === 0) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
+        <SmokeParticles count={8} />
+        <div className="relative z-10 w-full max-w-md px-6 text-center">
+          <div className="mb-8 flex justify-center">
+            <img src={logoSvg} alt="ViBo" className="h-16 w-16 logo-glow ghost-float" />
+          </div>
+          <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+            ViBoAI · Virtual Notebook
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            Think, Write,
+          </h1>
+          <h1 className="text-3xl italic text-muted-foreground">
+            Plan Privately.
+          </h1>
+          <p className="mt-5 text-sm text-muted-foreground leading-relaxed">
+            A private AI notebook on your device. No accounts. No cloud. No tracking. Ever.
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-6 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="accent-dot" /> LOCAL</span>
+            <span className="flex items-center gap-1.5"><span className="accent-dot" /> ENCRYPTED</span>
+            <span className="flex items-center gap-1.5"><span className="accent-dot" /> PRIVATE</span>
+          </div>
+          <button
+            onClick={handleNext}
+            className="mt-10 w-full rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
+          >
+            Begin setup
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // PIN setup sub-step
+  if (showPinStep) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
+        <div className="relative w-full max-w-md px-6 text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+              <Shield className="h-7 w-7 text-foreground" />
+            </div>
+          </div>
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">Set Up Encryption</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Create a PIN to encrypt your notes at rest
+          </p>
+          <div className="mt-6 relative">
+            <input
+              type={showPin ? 'text' : 'password'}
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="Enter PIN..."
+              className="w-full rounded-2xl border bg-muted px-4 py-4 text-center text-sm outline-none focus:border-foreground/30 aether-transition pr-12"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && pin.length >= 4 && handleNext()}
+            />
+            <button
+              onClick={() => setShowPin(!showPin)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          <button
+            onClick={handleNext}
+            disabled={pin.length < 4}
+            className="mt-4 w-full rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground disabled:opacity-40 aether-transition hover:opacity-90"
+          >
+            Next
+          </button>
+          <p className="mt-4 text-[11px] text-muted-foreground">
+            Your PIN derives an AES-256 key to<br />encrypt all notes locally
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
-      {/* Background pattern — ghostly radial */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(270, 70%, 60%) 1px, transparent 0)',
-        backgroundSize: '32px 32px',
-      }} />
-
-      <div className="relative w-full max-w-lg px-6">
-        {/* Step indicators */}
-        <div className="mb-8 flex items-center justify-center gap-2">
-          {stepLabels.map((label, i) => (
-            <div key={label} className="flex items-center gap-2">
-              <button
-                onClick={() => i < step && setStep(i)}
-                className={`flex h-6 items-center rounded-full px-2.5 text-[10px] font-medium aether-transition ${
-                  i === step
-                    ? 'bg-primary text-primary-foreground'
-                    : i < step
-                    ? 'bg-surface-active text-foreground'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                {i < step ? <Check className="h-3 w-3" /> : label}
-              </button>
-              {i < stepLabels.length - 1 && (
-                <div className={`h-px w-6 ${i < step ? 'bg-primary/50' : 'bg-border'}`} />
-              )}
-            </div>
+      <div className="relative w-full max-w-md px-6">
+        {/* Progress bar */}
+        <div className="mb-6 flex items-center justify-center gap-2">
+          {Array.from({ length: totalSteps }, (_, i) => (
+            <div
+              key={i}
+              className={`h-[3px] w-10 rounded-full aether-transition ${
+                i < step ? 'bg-foreground' : i === step ? 'bg-foreground' : 'bg-border'
+              }`}
+            />
           ))}
         </div>
 
-        {/* Step 0: Welcome / Name */}
-        {step === 0 && (
-          <div className="animate-fade-in text-center">
-            <div className="mb-6 flex justify-center">
-              <img
-                src={logoSvg}
-                alt="ViBo"
-                className="h-16 w-16 logo-glow ghost-float"
-              />
+        {/* Step label */}
+        <p className="mb-4 text-center font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+          Step {step} of {totalSteps}
+        </p>
+
+        {/* Step 1: Local Model */}
+        {step === 1 && (
+          <div className="animate-fade-in">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">Choose your</h2>
+              <h2 className="text-xl italic text-muted-foreground">local model.</h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Select a nano model for on-device inference. More models available in{' '}
+                <span className="font-medium text-foreground">Settings → Liquid AI</span>.
+              </p>
             </div>
-            <h1 className="mb-2 text-xl font-semibold tracking-tight text-foreground">
-              Welcome to ViBo
-            </h1>
-            <p className="mb-8 text-sm text-muted-foreground">
-              Your second brain starts here. Let's set up your workspace.
+            <div className="space-y-2">
+              {LOCAL_MODELS.map((model) => (
+                <button
+                  key={model.id}
+                  onClick={() => setSelectedModel(model.id)}
+                  className={`flex w-full items-start gap-3 rounded-2xl border p-4 text-left ghost-card aether-transition ${
+                    selectedModel === model.id ? 'border-foreground/30' : ''
+                  }`}
+                >
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">{model.name}</p>
+                    <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{model.desc}</p>
+                  </div>
+                  <span className="shrink-0 rounded-lg bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
+                    {model.size}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Integrations */}
+        {step === 2 && (
+          <div className="animate-fade-in">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">Connect</h2>
+              <h2 className="text-xl italic text-muted-foreground">your world.</h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Give agents access to your tools. You decide exactly what they can see.
+              </p>
+            </div>
+            <div className="space-y-2">
+              {INTEGRATIONS.map((intg) => (
+                <div
+                  key={intg.id}
+                  className="flex items-center justify-between rounded-2xl border p-4 ghost-card"
+                >
+                  <div className="flex items-center gap-3">
+                    <intg.icon className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{intg.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{intg.desc}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => toggleIntegration(intg.id)}
+                    className={`relative h-6 w-11 rounded-full aether-transition ${
+                      integrations[intg.id] ? 'bg-foreground' : 'bg-muted'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full aether-transition ${
+                        integrations[intg.id]
+                          ? 'left-[22px] bg-background'
+                          : 'left-0.5 bg-muted-foreground/40'
+                      }`}
+                    />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Security */}
+        {step === 3 && (
+          <div className="animate-fade-in">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">Secure your</h2>
+              <h2 className="text-xl italic text-muted-foreground">vault.</h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Choose how you unlock ViBo. Biometrics first, password as fallback.
+              </p>
+            </div>
+            <div className="space-y-2">
+              {SECURITY_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setSecurity(opt.id)}
+                  className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ghost-card aether-transition ${
+                    security === opt.id ? 'border-foreground/30' : ''
+                  }`}
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                    <opt.icon className="h-5 w-5 text-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">{opt.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{opt.desc}</p>
+                  </div>
+                  {security === opt.id && (
+                    <div className="h-3 w-3 rounded-full border-2 border-foreground flex items-center justify-center">
+                      <div className="h-1.5 w-1.5 rounded-full bg-foreground" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Agent */}
+        {step === 4 && (
+          <div className="animate-fade-in">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">Your first</h2>
+              <h2 className="text-xl italic text-muted-foreground">agent.</h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Pick a starter agent. You can add more later in Settings.
+              </p>
+            </div>
+            <div className="space-y-2">
+              {AGENT_PRESETS.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => setAgent(a.id)}
+                  className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ghost-card aether-transition ${
+                    agent === a.id ? 'border-foreground/30' : ''
+                  }`}
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-lg">
+                    {a.emoji}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">{a.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{a.desc}</p>
+                  </div>
+                  {agent === a.id && (
+                    <div className="h-3 w-3 rounded-full border-2 border-foreground flex items-center justify-center">
+                      <div className="h-1.5 w-1.5 rounded-full bg-foreground" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Name */}
+        {step === 5 && (
+          <div className="animate-fade-in text-center">
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">About</h2>
+            <h2 className="text-xl italic text-muted-foreground">you.</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              What should we call you?
             </p>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="What should we call you?"
-              className="mx-auto block w-72 rounded-md border bg-surface px-3 py-2.5 text-center text-sm outline-none placeholder:text-muted-foreground focus:border-primary aether-transition"
+              placeholder=""
+              className="mt-6 w-full rounded-2xl border bg-muted px-4 py-4 text-center text-sm outline-none focus:border-foreground/30 aether-transition"
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && canProceed() && handleNext()}
             />
           </div>
         )}
 
-        {/* Step 1: Role */}
-        {step === 1 && (
-          <div className="animate-fade-in">
-            <h2 className="mb-1 text-center text-lg font-semibold tracking-tight text-foreground">
-              How will you use ViBo?
-            </h2>
-            <p className="mb-6 text-center text-sm text-muted-foreground">
-              This tailors your workspace layout and suggestions.
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {ROLES.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => setRole(r.id)}
-                  className={`flex items-start gap-3 rounded-md border p-3 text-left ghost-card aether-transition ${
-                    role === r.id
-                      ? 'border-primary bg-primary/5'
-                      : 'hover:bg-surface-hover'
-                  }`}
-                >
-                  <r.icon className={`mt-0.5 h-4 w-4 shrink-0 ${role === r.id ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <div>
-                    <p className="text-xs font-medium text-foreground">{r.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{r.desc}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Workspace name */}
-        {step === 2 && (
-          <div className="animate-fade-in text-center">
-            <h2 className="mb-1 text-lg font-semibold tracking-tight text-foreground">
-              Name your vault
-            </h2>
-            <p className="mb-6 text-sm text-muted-foreground">
-              This is your workspace. You can rename it anytime.
-            </p>
-            <input
-              value={workspaceName}
-              onChange={(e) => setWorkspaceName(e.target.value)}
-              placeholder="My Vault"
-              className="mx-auto block w-72 rounded-md border bg-surface px-3 py-2.5 text-center text-sm outline-none placeholder:text-muted-foreground focus:border-primary aether-transition"
-              autoFocus
-              onKeyDown={(e) => e.key === 'Enter' && canProceed() && handleNext()}
-            />
-          </div>
-        )}
-
-        {/* Step 3: Theme */}
-        {step === 3 && (
-          <div className="animate-fade-in text-center">
-            <h2 className="mb-1 text-lg font-semibold tracking-tight text-foreground">
-              Choose your darkness
-            </h2>
-            <p className="mb-6 text-sm text-muted-foreground">
-              All themes are dark. Pick your shade.
-            </p>
-            <div className="mx-auto flex w-72 gap-2">
-              {THEMES.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTheme(t.id)}
-                  className={`flex-1 rounded-md border p-3 ghost-card aether-transition ${
-                    theme === t.id ? 'border-primary' : 'hover:border-muted-foreground'
-                  }`}
-                >
-                  <div
-                    className="mx-auto mb-2 h-8 w-8 rounded-sm border"
-                    style={{ backgroundColor: t.color }}
-                  />
-                  <p className="text-[10px] font-medium text-foreground">{t.label}</p>
-                </button>
-              ))}
-            </div>
-
-            {/* Feature toggles */}
-            <div className="mt-8">
-              <p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Enable features
-              </p>
-              <div className="mx-auto flex w-72 flex-wrap justify-center gap-1.5">
-                {FEATURES.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => toggleFeature(f.id)}
-                    className={`rounded-full border px-2.5 py-1 text-[10px] font-medium aether-transition ${
-                      features.includes(f.id)
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Ready */}
-        {step === 4 && (
-          <div className="animate-fade-in text-center">
-            <div className="mb-6 flex justify-center">
-              <img
-                src={logoSvg}
-                alt="ViBo"
-                className="h-16 w-16 logo-glow ghost-float"
-              />
-            </div>
-            <h2 className="mb-1 text-lg font-semibold tracking-tight text-foreground">
-              You're all set, {name}
-            </h2>
-            <p className="mb-2 text-sm text-muted-foreground">
-              Your vault <span className="text-foreground font-medium">"{workspaceName}"</span> is ready.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Role: <span className="text-foreground">{ROLES.find((r) => r.id === role)?.label}</span> ·{' '}
-              {features.length} features enabled
-            </p>
-          </div>
-        )}
-
-        {/* Navigation buttons */}
-        <div className="mt-8 flex items-center justify-between">
-          {step > 0 ? (
+        {/* Navigation */}
+        <div className="mt-8 flex items-center gap-3">
+          {step > 1 && (
             <button
               onClick={() => setStep(step - 1)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground aether-transition"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-muted-foreground hover:text-foreground aether-transition"
             >
-              <ChevronLeft className="h-3 w-3" /> Back
+              <ChevronLeft className="h-4 w-4" />
             </button>
-          ) : (
-            <div />
           )}
           <button
             onClick={handleNext}
             disabled={!canProceed()}
-            className="flex items-center gap-1 rounded-md bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40 aether-transition hover:bg-primary/90"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground disabled:opacity-40 aether-transition hover:opacity-90"
           >
-            {step === 4 ? 'Enter ViBo' : 'Continue'}
-            {step < 4 && <ChevronRight className="h-3 w-3" />}
+            {step === 5 ? 'Finish setup' : step === 2 ? 'Continue' : 'Continue setup'}
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
+
+        {step === 2 && (
+          <button
+            onClick={() => setStep(3)}
+            className="mt-3 w-full rounded-2xl border py-4 text-sm text-muted-foreground hover:text-foreground aether-transition"
+          >
+            Skip integrations
+          </button>
+        )}
       </div>
     </div>
   );
