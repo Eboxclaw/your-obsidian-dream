@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   DndContext,
   DragEndEvent,
-  DragOverEvent,
   DragStartEvent,
   PointerSensor,
   useSensor,
@@ -10,14 +9,12 @@ import {
   closestCorners,
   DragOverlay,
 } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useStore } from '@/store';
 import { KanbanColumnComponent } from '@/components/kanban/KanbanColumn';
-import { KanbanCardComponent } from '@/components/kanban/KanbanCard';
 import { Plus } from 'lucide-react';
 
 export function KanbanView() {
-  const { ui, boards, cards, addColumn, moveCard } = useStore();
+  const { ui, boards, cards, addColumn, moveCard, addCard } = useStore();
   const board = boards.find((b) => b.id === ui.activeBoardId);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [newColTitle, setNewColTitle] = useState('');
@@ -48,7 +45,6 @@ export function KanbanView() {
     const card = cards.find((c) => c.id === cardId);
     if (!card) return;
 
-    // Determine target column
     let targetColId: string;
     let targetIndex: number;
 
@@ -58,7 +54,6 @@ export function KanbanView() {
       const col = board.columns.find((c) => c.id === targetColId);
       targetIndex = col ? col.cardIds.indexOf(over.id as string) : 0;
     } else {
-      // Dropped on a column
       targetColId = over.id as string;
       const col = board.columns.find((c) => c.id === targetColId);
       targetIndex = col ? col.cardIds.length : 0;
@@ -77,6 +72,12 @@ export function KanbanView() {
     }
   };
 
+  const handleNewTask = () => {
+    if (board.columns[0]) {
+      addCard(board.id, board.columns[0].id, 'New Task');
+    }
+  };
+
   const activeCard = cards.find((c) => c.id === activeCardId);
 
   return (
@@ -85,9 +86,18 @@ export function KanbanView() {
         <h1 className="text-sm font-semibold tracking-tight text-foreground">
           {board.title}
         </h1>
-        <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-          {cards.filter((c) => c.boardId === board.id).length} cards · {board.columns.length} columns
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleNewTask}
+            className="flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:border-primary aether-transition"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Task
+          </button>
+          <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+            {cards.filter((c) => c.boardId === board.id).length} cards · {board.columns.length} columns
+          </span>
+        </div>
       </div>
 
       <div className="flex flex-1 gap-px overflow-x-auto p-4">

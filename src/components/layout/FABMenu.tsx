@@ -36,8 +36,7 @@ export function FABMenu() {
       return;
     }
     if (type === 'folder') {
-      const note = addNote('New Folder');
-      // Mark as folder
+      addNote('New Folder');
       toggleFab();
       setStep('menu');
       return;
@@ -54,9 +53,6 @@ export function FABMenu() {
 
   const handleTemplate = (template: typeof NOTE_TEMPLATES[0]) => {
     const note = addNote(template.label === 'Blank' ? 'Untitled' : template.label);
-    if (template.content) {
-      // We set the content after creation via updateNote would be cleaner but addNote returns the note
-    }
     setActiveNote(note.id);
     setView('notebook');
     toggleFab();
@@ -70,23 +66,23 @@ export function FABMenu() {
 
   return (
     <>
-      {/* FAB Button */}
+      {/* FAB Button — positioned absolute within the relative wrapper */}
       <button
         onClick={ui.fabOpen ? handleClose : toggleFab}
-        className={`fixed bottom-20 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg aether-transition ${
+        className={`absolute -top-14 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg aether-transition ${
           ui.fabOpen
             ? 'bg-muted text-foreground rotate-45'
-            : 'bg-foreground text-background'
+            : 'bg-primary text-primary-foreground shadow-[0_0_20px_hsl(var(--glow-color)/0.3)]'
         }`}
       >
-        <Plus className="h-6 w-6" />
+        <Plus className="h-5 w-5" />
       </button>
 
       {/* Overlay */}
       {ui.fabOpen && (
         <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" onClick={handleClose}>
           <div
-            className="absolute bottom-36 right-5 w-72 rounded-2xl border bg-card p-4 shadow-xl animate-fade-in"
+            className="absolute bottom-32 right-5 w-72 rounded-2xl border bg-card p-4 shadow-xl animate-fade-in"
             onClick={(e) => e.stopPropagation()}
           >
             {step === 'menu' ? (
@@ -97,7 +93,7 @@ export function FABMenu() {
                     <button
                       key={opt.id}
                       onClick={() => handleCreate(opt.id)}
-                      className="flex flex-col items-start gap-1 rounded-xl border p-3 text-left hover:bg-surface-hover aether-transition"
+                      className="flex flex-col items-start gap-1 rounded-xl border p-3 text-left hover:bg-surface-hover ghost-card aether-transition"
                     >
                       <opt.icon className="h-5 w-5 text-primary" />
                       <span className="text-sm font-medium text-foreground">{opt.label}</span>
@@ -120,7 +116,7 @@ export function FABMenu() {
                     <button
                       key={t.id}
                       onClick={() => handleTemplate(t)}
-                      className="flex w-full items-center rounded-lg border px-3 py-2.5 text-left text-sm font-medium text-foreground hover:bg-surface-hover aether-transition"
+                      className="flex w-full items-center rounded-lg border px-3 py-2.5 text-left text-sm font-medium text-foreground hover:bg-surface-hover ghost-card aether-transition"
                     >
                       {t.label}
                     </button>

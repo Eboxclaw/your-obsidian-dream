@@ -10,9 +10,9 @@ import {
   Briefcase,
   ChevronRight,
   ChevronLeft,
-  Sparkles,
   Check,
 } from 'lucide-react';
+import logoSvg from '@/assets/logo.svg';
 
 const ROLES: {
   id: UserRole;
@@ -29,9 +29,9 @@ const ROLES: {
 ];
 
 const THEMES = [
-  { id: 'dark' as const, label: 'Dark', color: 'hsl(240, 10%, 6%)' },
-  { id: 'midnight' as const, label: 'Midnight', color: 'hsl(230, 20%, 5%)' },
-  { id: 'abyss' as const, label: 'Abyss', color: 'hsl(240, 15%, 3%)' },
+  { id: 'dark' as const, label: 'Dark', color: 'hsl(270, 20%, 6%)' },
+  { id: 'midnight' as const, label: 'Midnight', color: 'hsl(270, 25%, 4%)' },
+  { id: 'abyss' as const, label: 'Abyss', color: 'hsl(270, 30%, 3%)' },
 ];
 
 const FEATURES = [
@@ -76,9 +76,9 @@ export function OnboardingWizard() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-[0.02]" style={{
-        backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(210, 100%, 50%) 1px, transparent 0)',
+      {/* Background pattern — ghostly radial */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(270, 70%, 60%) 1px, transparent 0)',
         backgroundSize: '32px 32px',
       }} />
 
@@ -110,9 +110,11 @@ export function OnboardingWizard() {
         {step === 0 && (
           <div className="animate-fade-in text-center">
             <div className="mb-6 flex justify-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg border bg-surface">
-                <Sparkles className="h-6 w-6 text-primary" />
-              </div>
+              <img
+                src={logoSvg}
+                alt="ViBo"
+                className="h-16 w-16 logo-glow ghost-float"
+              />
             </div>
             <h1 className="mb-2 text-xl font-semibold tracking-tight text-foreground">
               Welcome to ViBo
@@ -145,7 +147,7 @@ export function OnboardingWizard() {
                 <button
                   key={r.id}
                   onClick={() => setRole(r.id)}
-                  className={`flex items-start gap-3 rounded-md border p-3 text-left aether-transition ${
+                  className={`flex items-start gap-3 rounded-md border p-3 text-left ghost-card aether-transition ${
                     role === r.id
                       ? 'border-primary bg-primary/5'
                       : 'hover:bg-surface-hover'
@@ -196,7 +198,7 @@ export function OnboardingWizard() {
                 <button
                   key={t.id}
                   onClick={() => setTheme(t.id)}
-                  className={`flex-1 rounded-md border p-3 aether-transition ${
+                  className={`flex-1 rounded-md border p-3 ghost-card aether-transition ${
                     theme === t.id ? 'border-primary' : 'hover:border-muted-foreground'
                   }`}
                 >
@@ -237,9 +239,11 @@ export function OnboardingWizard() {
         {step === 4 && (
           <div className="animate-fade-in text-center">
             <div className="mb-6 flex justify-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg border bg-surface">
-                <Check className="h-6 w-6 text-primary" />
-              </div>
+              <img
+                src={logoSvg}
+                alt="ViBo"
+                className="h-16 w-16 logo-glow ghost-float"
+              />
             </div>
             <h2 className="mb-1 text-lg font-semibold tracking-tight text-foreground">
               You're all set, {name}
