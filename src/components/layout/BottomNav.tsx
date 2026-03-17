@@ -14,7 +14,7 @@ export function BottomNav() {
   const { ui, setView } = useStore();
 
   return (
-    <nav className="flex h-14 shrink-0 items-end justify-around border-t bg-background px-2 pb-1">
+    <nav className="flex h-14 shrink-0 items-end justify-around border-t bg-card px-2 pb-1">
       {items.map(({ view, label, icon: Icon }) => {
         const active = ui.activeView === view;
         return (
@@ -23,7 +23,7 @@ export function BottomNav() {
             onClick={() => setView(view)}
             className={`flex flex-col items-center gap-0.5 rounded-lg px-4 py-1.5 aether-transition ${
               active
-                ? 'text-primary'
+                ? 'text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >

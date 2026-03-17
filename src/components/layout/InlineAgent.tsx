@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '@/store';
-import { Bot, Send, X, Plus, Wifi, WifiOff } from 'lucide-react';
+import { Bot, Send, X, Plus, WifiOff } from 'lucide-react';
 
 function generateResponse(input: string, noteCount: number): string {
   const lower = input.toLowerCase();
@@ -56,8 +56,8 @@ export function InlineAgent() {
           onClick={toggleInlineAgent}
           className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left aether-transition hover:bg-surface-hover"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
-            <Bot className="h-4 w-4 text-primary" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted">
+            <Bot className="h-4 w-4 text-muted-foreground" />
           </div>
           <span className="flex-1 text-sm text-muted-foreground">Ask assistant...</span>
           <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -79,7 +79,7 @@ export function InlineAgent() {
             onClick={() => setActiveAgentSession(s.id)}
             className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium shrink-0 aether-transition ${
               s.id === session?.id
-                ? 'bg-primary/10 text-primary'
+                ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -139,7 +139,7 @@ export function InlineAgent() {
 
       {/* Input + chips */}
       <div className="border-t px-3 py-2">
-        <div className="flex items-center gap-2 rounded-xl border bg-background px-3 py-2 focus-within:border-primary aether-transition">
+        <div className="flex items-center gap-2 rounded-xl border bg-background px-3 py-2 focus-within:border-foreground/30 aether-transition">
           <Bot className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
             value={input}

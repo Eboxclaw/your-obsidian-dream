@@ -66,13 +66,13 @@ export function FABMenu() {
 
   return (
     <>
-      {/* FAB Button — positioned absolute within the relative wrapper */}
+      {/* FAB Button */}
       <button
         onClick={ui.fabOpen ? handleClose : toggleFab}
         className={`absolute -top-14 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg aether-transition ${
           ui.fabOpen
             ? 'bg-muted text-foreground rotate-45'
-            : 'bg-primary text-primary-foreground shadow-[0_0_20px_hsl(var(--glow-color)/0.3)]'
+            : 'bg-primary text-primary-foreground'
         }`}
       >
         <Plus className="h-5 w-5" />
@@ -95,7 +95,7 @@ export function FABMenu() {
                       onClick={() => handleCreate(opt.id)}
                       className="flex flex-col items-start gap-1 rounded-xl border p-3 text-left hover:bg-surface-hover ghost-card aether-transition"
                     >
-                      <opt.icon className="h-5 w-5 text-primary" />
+                      <opt.icon className="h-5 w-5 text-muted-foreground" />
                       <span className="text-sm font-medium text-foreground">{opt.label}</span>
                       <span className="text-[10px] text-muted-foreground">{opt.subtitle}</span>
                     </button>

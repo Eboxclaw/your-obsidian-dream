@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '@/store';
 import { format } from 'date-fns';
 import { FileText, CheckSquare, Bot, GitFork } from 'lucide-react';
+import { SmokeParticles } from '@/components/effects/SmokeParticles';
 
 export function Dashboard() {
   const { notes, boards, cards, agents, setActiveNote, setView, setActiveBoard, onboarding } = useStore();
@@ -35,9 +36,10 @@ export function Dashboard() {
         </p>
       </div>
 
-      {/* Today's Tasks */}
-      <div className="rounded-2xl border bg-card p-4">
-        <div className="flex items-center justify-between">
+      {/* Today's Tasks — with smoke */}
+      <div className="relative rounded-2xl border bg-card p-4 overflow-hidden ghost-card">
+        <SmokeParticles count={4} />
+        <div className="relative z-10 flex items-center justify-between">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Today's Tasks</p>
             <p className="text-2xl font-bold text-foreground mt-1">{pendingTasks}</p>
@@ -52,25 +54,34 @@ export function Dashboard() {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-2xl border bg-card p-3 text-center">
-          <FileText className="h-5 w-5 mx-auto text-primary mb-1" />
-          <p className="text-lg font-bold text-foreground">{notes.length}</p>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Notes</p>
+        <div className="relative rounded-2xl border bg-card p-3 text-center overflow-hidden ghost-card">
+          <SmokeParticles count={2} />
+          <div className="relative z-10">
+            <FileText className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+            <p className="text-lg font-bold text-foreground">{notes.length}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Notes</p>
+          </div>
         </div>
-        <div className="rounded-2xl border bg-card p-3 text-center">
-          <CheckSquare className="h-5 w-5 mx-auto text-primary mb-1" />
-          <p className="text-lg font-bold text-foreground">{totalTasks}</p>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Tasks</p>
+        <div className="relative rounded-2xl border bg-card p-3 text-center overflow-hidden ghost-card">
+          <SmokeParticles count={2} />
+          <div className="relative z-10">
+            <CheckSquare className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+            <p className="text-lg font-bold text-foreground">{totalTasks}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Tasks</p>
+          </div>
         </div>
-        <div className="rounded-2xl border bg-card p-3 text-center">
-          <Bot className="h-5 w-5 mx-auto text-primary mb-1" />
-          <p className="text-lg font-bold text-foreground">{activeAgents}</p>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Agents</p>
+        <div className="relative rounded-2xl border bg-card p-3 text-center overflow-hidden ghost-card">
+          <SmokeParticles count={2} />
+          <div className="relative z-10">
+            <Bot className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+            <p className="text-lg font-bold text-foreground">{activeAgents}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Agents</p>
+          </div>
         </div>
       </div>
 
       {/* Graph preview */}
-      <div className="rounded-2xl border bg-card p-4">
+      <div className="rounded-2xl border bg-card p-4 ghost-card">
         <div className="flex items-center gap-2 mb-3">
           <GitFork className="h-4 w-4 text-muted-foreground" />
           <p className="text-xs font-medium text-foreground">Knowledge Graph</p>
@@ -88,7 +99,7 @@ export function Dashboard() {
           <button
             onClick={() => setTab('notes')}
             className={`text-xs font-medium pb-1 border-b-2 aether-transition ${
-              tab === 'notes' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground'
+              tab === 'notes' ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground'
             }`}
           >
             Recent Notes
@@ -96,7 +107,7 @@ export function Dashboard() {
           <button
             onClick={() => setTab('tasks')}
             className={`text-xs font-medium pb-1 border-b-2 aether-transition ${
-              tab === 'tasks' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground'
+              tab === 'tasks' ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground'
             }`}
           >
             Recent Tasks
