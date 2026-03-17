@@ -45,7 +45,19 @@ export interface Subtask {
   done: boolean;
 }
 
-export type ViewMode = 'dashboard' | 'notebook' | 'kanban';
+export type ViewMode = 'dashboard' | 'notebook' | 'kanban' | 'graph';
+
+export type UserRole = 'general' | 'researcher' | 'writer' | 'pm' | 'developer' | 'analyst';
+
+export interface OnboardingState {
+  completed: boolean;
+  step: number;
+  role: UserRole | null;
+  name: string;
+  workspaceName: string;
+  theme: 'dark' | 'midnight' | 'abyss';
+  features: string[];
+}
 
 export interface UIState {
   activeView: ViewMode;
