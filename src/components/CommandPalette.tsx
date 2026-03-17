@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/store';
-import { Search, FileText, LayoutDashboard, BookOpen, Columns3, Plus, GitFork } from 'lucide-react';
+import { Search, FileText, LayoutDashboard, BookOpen, Columns3, Plus, GitFork, Bot, FileStack, Settings } from 'lucide-react';
 
 export function CommandPalette() {
   const {
