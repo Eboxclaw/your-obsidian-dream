@@ -110,6 +110,9 @@ export function AppShell() {
           {ui.activeView === 'notebook' && <Notebook />}
           {ui.activeView === 'kanban' && <KanbanView />}
           {ui.activeView === 'graph' && <GraphView />}
+          {ui.activeView === 'agent' && <AgentView />}
+          {ui.activeView === 'templates' && <TemplatesView />}
+          {ui.activeView === 'settings' && <SettingsView />}
         </main>
 
         {showInspector && (

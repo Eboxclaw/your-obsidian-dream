@@ -45,7 +45,7 @@ export interface Subtask {
   done: boolean;
 }
 
-export type ViewMode = 'dashboard' | 'notebook' | 'kanban' | 'graph';
+export type ViewMode = 'dashboard' | 'notebook' | 'kanban' | 'graph' | 'agent' | 'templates' | 'settings';
 
 export type UserRole = 'general' | 'researcher' | 'writer' | 'pm' | 'developer' | 'analyst';
 

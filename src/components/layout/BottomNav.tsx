@@ -1,5 +1,5 @@
 import { useStore } from '@/store';
-import { LayoutDashboard, BookOpen, Columns3, GitFork } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Columns3, GitFork, Bot, FileStack, Settings } from 'lucide-react';
 import type { ViewMode } from '@/types';
 
 const items: { view: ViewMode; label: string; icon: typeof LayoutDashboard }[] = [
@@ -7,6 +7,9 @@ const items: { view: ViewMode; label: string; icon: typeof LayoutDashboard }[] =
   { view: 'notebook', label: 'Notebook', icon: BookOpen },
   { view: 'kanban', label: 'Kanban', icon: Columns3 },
   { view: 'graph', label: 'Graph', icon: GitFork },
+  { view: 'templates', label: 'Templates', icon: FileStack },
+  { view: 'agent', label: 'Agent', icon: Bot },
+  { view: 'settings', label: 'Settings', icon: Settings },
 ];
 
 export function BottomNav() {
