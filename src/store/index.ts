@@ -288,6 +288,27 @@ export const useStore = create<AppStore>()(
         set((s) => ({
           ui: { ...s.ui, sidebarCollapsed: !s.ui.sidebarCollapsed },
         })),
+
+      // Onboarding
+      onboarding: {
+        completed: false,
+        step: 0,
+        role: null,
+        name: '',
+        workspaceName: 'My Vault',
+        theme: 'dark' as const,
+        features: ['wikilinks', 'kanban', 'graph'],
+      },
+
+      setOnboarding: (data) =>
+        set((s) => ({
+          onboarding: { ...s.onboarding, ...data, completed: true },
+        })),
+
+      completeOnboarding: () =>
+        set((s) => ({
+          onboarding: { ...s.onboarding, completed: true },
+        })),
     }),
     {
       name: 'vibo-store',
