@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Note, KanbanBoard, KanbanCard, UIState, ViewMode } from '@/types';
+import type { Note, KanbanBoard, KanbanCard, UIState, ViewMode, OnboardingState, UserRole } from '@/types';
 
 const createId = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
@@ -93,6 +93,11 @@ interface AppStore {
   toggleInspector: () => void;
   toggleCommandPalette: () => void;
   toggleSidebar: () => void;
+
+  // Onboarding
+  onboarding: OnboardingState;
+  setOnboarding: (data: Partial<OnboardingState>) => void;
+  completeOnboarding: () => void;
 }
 
 export const useStore = create<AppStore>()(
@@ -287,6 +292,27 @@ export const useStore = create<AppStore>()(
       toggleSidebar: () =>
         set((s) => ({
           ui: { ...s.ui, sidebarCollapsed: !s.ui.sidebarCollapsed },
+        })),
+
+      // Onboarding
+      onboarding: {
+        completed: false,
+        step: 0,
+        role: null,
+        name: '',
+        workspaceName: 'My Vault',
+        theme: 'dark' as const,
+        features: ['wikilinks', 'kanban', 'graph'],
+      },
+
+      setOnboarding: (data) =>
+        set((s) => ({
+          onboarding: { ...s.onboarding, ...data, completed: true },
+        })),
+
+      completeOnboarding: () =>
+        set((s) => ({
+          onboarding: { ...s.onboarding, completed: true },
         })),
     }),
     {

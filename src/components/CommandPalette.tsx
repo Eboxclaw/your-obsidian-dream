@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/store';
-import { Search, FileText, LayoutDashboard, BookOpen, Columns3, Plus } from 'lucide-react';
+import { Search, FileText, LayoutDashboard, BookOpen, Columns3, Plus, GitFork } from 'lucide-react';
 
 export function CommandPalette() {
   const {
@@ -31,6 +31,7 @@ export function CommandPalette() {
     { id: 'nav-dash', label: 'Dashboard', sublabel: 'Navigate', icon: LayoutDashboard, action: () => { setView('dashboard'); toggleCommandPalette(); } },
     { id: 'nav-note', label: 'Notebook', sublabel: 'Navigate', icon: BookOpen, action: () => { setView('notebook'); toggleCommandPalette(); } },
     { id: 'nav-kanban', label: 'Kanban', sublabel: 'Navigate', icon: Columns3, action: () => { setView('kanban'); toggleCommandPalette(); } },
+    { id: 'nav-graph', label: 'Graph View', sublabel: 'Navigate', icon: GitFork, action: () => { setView('graph'); toggleCommandPalette(); } },
     { id: 'new-note', label: 'New Note', sublabel: 'Action', icon: Plus, action: () => { const n = addNote('Untitled'); setActiveNote(n.id); setView('notebook'); toggleCommandPalette(); } },
   );
 

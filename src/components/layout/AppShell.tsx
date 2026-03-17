@@ -5,12 +5,14 @@ import { Inspector } from '@/components/layout/Inspector';
 import { Dashboard } from '@/components/views/Dashboard';
 import { Notebook } from '@/components/views/Notebook';
 import { KanbanView } from '@/components/views/KanbanView';
+import { GraphView } from '@/components/views/GraphView';
 import { CommandPalette } from '@/components/CommandPalette';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { LayoutDashboard, BookOpen, Columns3, PanelRight, PanelLeft } from 'lucide-react';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { PanelRight, PanelLeft } from 'lucide-react';
 
 export function AppShell() {
-  const { ui, toggleCommandPalette, toggleSidebar, toggleInspector, addNote, setActiveNote, setView } = useStore();
+  const { ui, onboarding, toggleCommandPalette, toggleSidebar, toggleInspector, addNote, setActiveNote, setView } = useStore();
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -29,6 +31,10 @@ export function AppShell() {
         e.preventDefault();
         toggleSidebar();
       }
+      if (mod && e.key === 'g') {
+        e.preventDefault();
+        setView('graph');
+      }
     },
     [toggleCommandPalette, addNote, setActiveNote, setView, toggleSidebar]
   );
@@ -37,6 +43,11 @@ export function AppShell() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  // Show onboarding if not completed
+  if (!onboarding.completed) {
+    return <OnboardingWizard />;
+  }
 
   const showSidebar = ui.activeView === 'notebook' && !ui.sidebarCollapsed;
   const showInspector = ui.activeView === 'notebook' && ui.inspectorOpen;
@@ -57,13 +68,15 @@ export function AppShell() {
           <span className="text-xs font-medium tracking-tight text-muted-foreground ml-1">
             ViBo
           </span>
+          {onboarding.workspaceName && (
+            <span className="text-[10px] text-muted-foreground ml-1">
+              / {onboarding.workspaceName}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => {
-              const kbd = navigator.platform.includes('Mac') ? '⌘K' : 'Ctrl+K';
-              toggleCommandPalette();
-            }}
+            onClick={toggleCommandPalette}
             className="flex h-7 items-center gap-1.5 rounded-sm border px-2 text-xs text-muted-foreground hover:text-foreground aether-transition"
           >
             <span>Search</span>
@@ -93,6 +106,7 @@ export function AppShell() {
           {ui.activeView === 'dashboard' && <Dashboard />}
           {ui.activeView === 'notebook' && <Notebook />}
           {ui.activeView === 'kanban' && <KanbanView />}
+          {ui.activeView === 'graph' && <GraphView />}
         </main>
 
         {showInspector && (
