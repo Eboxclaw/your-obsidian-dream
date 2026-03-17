@@ -1,11 +1,12 @@
 import { useStore } from '@/store';
-import { LayoutDashboard, BookOpen, Columns3 } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Columns3, GitFork } from 'lucide-react';
 import type { ViewMode } from '@/types';
 
 const items: { view: ViewMode; label: string; icon: typeof LayoutDashboard }[] = [
   { view: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { view: 'notebook', label: 'Notebook', icon: BookOpen },
   { view: 'kanban', label: 'Kanban', icon: Columns3 },
+  { view: 'graph', label: 'Graph', icon: GitFork },
 ];
 
 export function BottomNav() {
