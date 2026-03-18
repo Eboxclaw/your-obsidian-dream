@@ -71,7 +71,7 @@ export function InlineAgent() {
       toggleInlineAgent();
     } else {
       setInput(action);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 50);
     }
   };
 
