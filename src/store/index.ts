@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Note, KanbanBoard, KanbanCard, UIState, ViewMode, OnboardingState, UserRole, AgentConfig, AgentSkill, AgentRole, AgentSession, AgentMessage } from '@/types';
+import type { Note, KanbanBoard, KanbanCard, UIState, ViewMode, OnboardingState, UserRole, AgentConfig, AgentSkill, AgentRole, AgentSession, AgentMessage, Folder, CustomTemplate } from '@/types';
 
 const createId = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
@@ -15,6 +15,7 @@ const WELCOME_NOTE: Note = {
   parentId: null,
   isFolder: false,
   isPrivate: false,
+  folderId: null,
 };
 
 const DEFAULT_BOARD: KanbanBoard = {
@@ -27,6 +28,7 @@ const DEFAULT_BOARD: KanbanBoard = {
   ],
   created: now(),
   modified: now(),
+  folderId: null,
 };
 
 const DEFAULT_CARDS: KanbanCard[] = [
@@ -61,7 +63,20 @@ const DEFAULT_SESSIONS: AgentSession[] = [
   },
 ];
 
+const DEFAULT_FOLDER: Folder = {
+  id: 'default-folder',
+  name: 'My Vault',
+  created: now(),
+  parentId: null,
+};
+
 interface AppStore {
+  // Folders
+  folders: Folder[];
+  addFolder: (name: string, parentId?: string | null) => Folder;
+  renameFolder: (id: string, name: string) => void;
+  deleteFolder: (id: string) => void;
+
   // Notes
   notes: Note[];
   addNote: (title: string, parentId?: string | null, isPrivate?: boolean) => Note;
@@ -96,11 +111,18 @@ interface AppStore {
   removeAgentSession: (id: string) => void;
   addMessageToSession: (sessionId: string, msg: AgentMessage) => void;
 
+  // Custom Templates
+  customTemplates: CustomTemplate[];
+  addCustomTemplate: (template: Omit<CustomTemplate, 'id' | 'created'>) => CustomTemplate;
+  updateCustomTemplate: (id: string, updates: Partial<CustomTemplate>) => void;
+  deleteCustomTemplate: (id: string) => void;
+
   // UI
   ui: UIState;
   setView: (view: ViewMode) => void;
   setActiveNote: (id: string | null) => void;
   setActiveBoard: (id: string | null) => void;
+  setActiveFolder: (id: string | null) => void;
   toggleInspector: () => void;
   toggleCommandPalette: () => void;
   toggleSidebar: () => void;
@@ -118,9 +140,31 @@ interface AppStore {
 export const useStore = create<AppStore>()(
   persist(
     (set, get) => ({
+      // Folders
+      folders: [DEFAULT_FOLDER],
+
+      addFolder: (name, parentId = null) => {
+        const folder: Folder = { id: createId(), name, created: now(), parentId };
+        set((s) => ({ folders: [...s.folders, folder] }));
+        return folder;
+      },
+
+      renameFolder: (id, name) =>
+        set((s) => ({ folders: s.folders.map((f) => (f.id === id ? { ...f, name } : f)) })),
+
+      deleteFolder: (id) =>
+        set((s) => ({
+          folders: s.folders.filter((f) => f.id !== id),
+          notes: s.notes.map((n) => (n.folderId === id ? { ...n, folderId: null } : n)),
+          boards: s.boards.map((b) => (b.folderId === id ? { ...b, folderId: null } : b)),
+          ui: s.ui.activeFolderId === id ? { ...s.ui, activeFolderId: null } : s.ui,
+        })),
+
+      // Notes
       notes: [WELCOME_NOTE],
 
       addNote: (title, parentId = null, isPrivate = false) => {
+        const activeFolderId = get().ui.activeFolderId;
         const note: Note = {
           id: createId(),
           title,
@@ -131,6 +175,7 @@ export const useStore = create<AppStore>()(
           parentId,
           isFolder: false,
           isPrivate,
+          folderId: activeFolderId,
         };
         set((s) => ({ notes: [...s.notes, note] }));
         return note;
@@ -158,6 +203,7 @@ export const useStore = create<AppStore>()(
       cards: DEFAULT_CARDS,
 
       addBoard: (title) => {
+        const activeFolderId = get().ui.activeFolderId;
         const board: KanbanBoard = {
           id: createId(),
           title,
@@ -168,6 +214,7 @@ export const useStore = create<AppStore>()(
           ],
           created: now(),
           modified: now(),
+          folderId: activeFolderId,
         };
         set((s) => ({ boards: [...s.boards, board] }));
         return board;
@@ -334,6 +381,23 @@ export const useStore = create<AppStore>()(
           ),
         })),
 
+      // Custom Templates
+      customTemplates: [],
+
+      addCustomTemplate: (template) => {
+        const ct: CustomTemplate = { ...template, id: createId(), created: now() };
+        set((s) => ({ customTemplates: [...s.customTemplates, ct] }));
+        return ct;
+      },
+
+      updateCustomTemplate: (id, updates) =>
+        set((s) => ({
+          customTemplates: s.customTemplates.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+        })),
+
+      deleteCustomTemplate: (id) =>
+        set((s) => ({ customTemplates: s.customTemplates.filter((t) => t.id !== id) })),
+
       // UI
       ui: {
         activeView: 'dashboard' as ViewMode,
@@ -346,11 +410,13 @@ export const useStore = create<AppStore>()(
         inlineAgentOpen: false,
         activeAgentSessionId: 'session-1',
         notesTab: 'all' as const,
+        activeFolderId: null,
       },
 
       setView: (view) => set((s) => ({ ui: { ...s.ui, activeView: view } })),
       setActiveNote: (id) => set((s) => ({ ui: { ...s.ui, activeNoteId: id } })),
       setActiveBoard: (id) => set((s) => ({ ui: { ...s.ui, activeBoardId: id } })),
+      setActiveFolder: (id) => set((s) => ({ ui: { ...s.ui, activeFolderId: id } })),
       toggleInspector: () => set((s) => ({ ui: { ...s.ui, inspectorOpen: !s.ui.inspectorOpen } })),
       toggleCommandPalette: () => set((s) => ({ ui: { ...s.ui, commandPaletteOpen: !s.ui.commandPaletteOpen } })),
       toggleSidebar: () => set((s) => ({ ui: { ...s.ui, sidebarCollapsed: !s.ui.sidebarCollapsed } })),
