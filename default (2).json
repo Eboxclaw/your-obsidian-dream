@@ -1,0 +1,30 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capability set for ViBo. Uses explicit permissions per command (no leap-ai:default wildcard) to enforce least-privilege per the roadmap security model.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+
+    "tauri-plugin-sql:default",
+    "tauri-plugin-fs:default",
+    "tauri-plugin-http:default",
+    "tauri-plugin-biometric:default",
+
+    "leap-ai:allow-runtime-info",
+    "leap-ai:allow-download-model",
+    "leap-ai:allow-load-model",
+    "leap-ai:allow-load-cached-model",
+    "leap-ai:allow-list-cached-models",
+    "leap-ai:allow-remove-cached-model",
+    "leap-ai:allow-unload-model",
+    "leap-ai:allow-create-conversation",
+    "leap-ai:allow-create-conversation-from-history",
+    "leap-ai:allow-generate",
+    "leap-ai:allow-stop-generation"
+
+    // NOTE: leap-ai:allow-export-conversation is intentionally excluded.
+    // It is not required in Phase 1-2. Add it explicitly if/when
+    // the distillation export feature (Phase 5) requires it.
+  ]
+}
