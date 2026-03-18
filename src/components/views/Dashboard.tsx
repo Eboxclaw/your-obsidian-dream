@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore } from '@/store';
 import { format } from 'date-fns';
 import { FileText, CheckSquare, Bot, GitFork } from 'lucide-react';
-import { SmokeParticles } from '@/components/effects/SmokeParticles';
+
 
 export function Dashboard() {
   const { notes, boards, cards, agents, setActiveNote, setView, setActiveBoard, onboarding } = useStore();
