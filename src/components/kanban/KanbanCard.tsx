@@ -2,14 +2,14 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useStore } from '@/store';
 import type { KanbanCard } from '@/types';
-import { GripVertical, CheckSquare, Square } from 'lucide-react';
+import { GripVertical, CheckSquare, Square, Trash2 } from 'lucide-react';
 
 interface Props {
   card: KanbanCard;
 }
 
 export function KanbanCardComponent({ card }: Props) {
-  const { updateCard } = useStore();
+  const { updateCard, deleteCard } = useStore();
   const {
     attributes,
     listeners,
@@ -66,7 +66,7 @@ export function KanbanCardComponent({ card }: Props) {
                   className="flex w-full items-center gap-1.5 text-left"
                 >
                   {st.done ? (
-                    <CheckSquare className="h-3 w-3 shrink-0 text-primary" />
+                    <CheckSquare className="h-3 w-3 shrink-0 text-accent" />
                   ) : (
                     <Square className="h-3 w-3 shrink-0 text-muted-foreground" />
                   )}
@@ -87,6 +87,12 @@ export function KanbanCardComponent({ card }: Props) {
             </div>
           )}
         </div>
+        <button
+          onClick={() => deleteCard(card.id)}
+          className="mt-0.5 shrink-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 aether-transition"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
       </div>
     </div>
   );

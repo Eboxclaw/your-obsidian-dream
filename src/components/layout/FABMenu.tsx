@@ -24,10 +24,7 @@ export function FABMenu() {
   const [newFolderName, setNewFolderName] = useState('');
 
   const handleCreate = (type: string) => {
-    if (type === 'note') {
-      setStep('template');
-      return;
-    }
+    if (type === 'note') { setStep('template'); return; }
     if (type === 'task') {
       const board = boards[0];
       if (board && board.columns[0]) {
@@ -37,10 +34,7 @@ export function FABMenu() {
       handleClose();
       return;
     }
-    if (type === 'folder') {
-      setStep('folder');
-      return;
-    }
+    if (type === 'folder') { setStep('folder'); return; }
     if (type === 'secret') {
       const note = addNote('Private Note', null, true);
       setActiveNote(note.id);
@@ -79,10 +73,10 @@ export function FABMenu() {
 
   return (
     <>
-      {/* FAB Button — fixed bottom-right corner */}
+      {/* FAB Button — fixed bottom-LEFT corner */}
       <button
         onClick={ui.fabOpen ? handleClose : toggleFab}
-        className={`fixed bottom-[7.5rem] right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg aether-transition ${
+        className={`fixed bottom-[7.5rem] left-5 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg aether-transition ${
           ui.fabOpen
             ? 'bg-muted text-foreground rotate-45'
             : 'bg-accent text-accent-foreground'
@@ -105,10 +99,7 @@ export function FABMenu() {
                     <h3 className="text-base font-semibold text-foreground">Create New</h3>
                     <p className="text-[11px] text-muted-foreground mt-0.5">What do you want to create?</p>
                   </div>
-                  <button
-                    onClick={handleClose}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-hover aether-transition"
-                  >
+                  <button onClick={handleClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-hover aether-transition">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -131,27 +122,17 @@ export function FABMenu() {
             {step === 'template' && (
               <>
                 <div className="flex items-center justify-between mb-4">
-                  <button
-                    onClick={() => setStep('menu')}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground aether-transition"
-                  >
+                  <button onClick={() => setStep('menu')} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground aether-transition">
                     <ArrowLeft className="h-3.5 w-3.5" /> Back
                   </button>
-                  <button
-                    onClick={handleClose}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-hover aether-transition"
-                  >
+                  <button onClick={handleClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-hover aether-transition">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
                 <h3 className="text-base font-semibold text-foreground mb-3">Choose Template</h3>
                 <div className="space-y-2">
                   {NOTE_TEMPLATES.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => handleTemplate(t)}
-                      className="flex w-full items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium text-foreground hover:bg-surface-hover ghost-card aether-transition"
-                    >
+                    <button key={t.id} onClick={() => handleTemplate(t)} className="flex w-full items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium text-foreground hover:bg-surface-hover ghost-card aether-transition">
                       {t.label}
                     </button>
                   ))}
@@ -162,23 +143,15 @@ export function FABMenu() {
             {step === 'folder' && (
               <>
                 <div className="flex items-center justify-between mb-4">
-                  <button
-                    onClick={() => setStep('menu')}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground aether-transition"
-                  >
+                  <button onClick={() => setStep('menu')} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground aether-transition">
                     <ArrowLeft className="h-3.5 w-3.5" /> Back
                   </button>
-                  <button
-                    onClick={handleClose}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-hover aether-transition"
-                  >
+                  <button onClick={handleClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-hover aether-transition">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
                 <h3 className="text-base font-semibold text-foreground mb-1">Folders</h3>
                 <p className="text-[11px] text-muted-foreground mb-4">Create a new folder or switch to an existing one.</p>
-
-                {/* Create new folder */}
                 <div className="flex items-center gap-2 mb-4">
                   <input
                     autoFocus
@@ -196,23 +169,14 @@ export function FABMenu() {
                     Create
                   </button>
                 </div>
-
-                {/* Existing folders */}
                 <div className="space-y-1 max-h-48 overflow-auto">
-                  <button
-                    onClick={() => handleSwitchFolder(null)}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover aether-transition"
-                  >
+                  <button onClick={() => handleSwitchFolder(null)} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover aether-transition">
                     <FolderOpen className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-foreground">All Folders</span>
                     <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
                   </button>
                   {folders.map((folder) => (
-                    <button
-                      key={folder.id}
-                      onClick={() => handleSwitchFolder(folder.id)}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover aether-transition"
-                    >
+                    <button key={folder.id} onClick={() => handleSwitchFolder(folder.id)} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover aether-transition">
                       <FolderOpen className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-foreground">{folder.name}</span>
                       <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />

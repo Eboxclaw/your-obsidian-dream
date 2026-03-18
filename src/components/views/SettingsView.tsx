@@ -20,7 +20,7 @@ const MODELS = [
 export function SettingsView() {
   const { notes, boards, cards } = useStore();
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
-  const [biometrics, setBiometrics] = useState(false);
+  const [biometrics, setBiometrics] = useState(true); // Default ON
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [ollamaKey, setOllamaKey] = useState('');
   const [ollamaModel, setOllamaModel] = useState('llama3');
@@ -33,6 +33,16 @@ export function SettingsView() {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+    }
+  };
+
+  const handleToggleBiometrics = () => {
+    const next = !biometrics;
+    if (next) {
+      // Simulate biometric enrollment
+      setBiometrics(true);
+    } else {
+      setBiometrics(false);
     }
   };
 
@@ -76,10 +86,10 @@ export function SettingsView() {
         </div>
       </section>
 
-      {/* Encryption */}
+      {/* Encryption & Biometrics */}
       <section className="rounded-2xl border bg-card p-4 space-y-3 ghost-card">
         <h2 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">
-          Encryption
+          Security
         </h2>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -89,22 +99,27 @@ export function SettingsView() {
               <p className="text-[10px] text-muted-foreground">End-to-end encryption for private notes</p>
             </div>
           </div>
-          <span className="text-[10px] font-medium text-foreground bg-muted px-2 py-0.5 rounded-full">Active</span>
+          <span className="text-[10px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-full">Active</span>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Fingerprint className="h-4 w-4 text-foreground" />
-            <span className="text-sm text-foreground">Biometrics</span>
+            <div>
+              <span className="text-sm text-foreground">Biometrics</span>
+              <p className="text-[10px] text-muted-foreground">
+                {biometrics ? 'Primary unlock method' : 'PIN used as primary'}
+              </p>
+            </div>
           </div>
           <button
-            onClick={() => setBiometrics(!biometrics)}
+            onClick={handleToggleBiometrics}
             className={`relative h-6 w-11 rounded-full aether-transition ${
-              biometrics ? 'bg-foreground' : 'bg-muted'
+              biometrics ? 'bg-accent' : 'bg-muted'
             }`}
           >
             <span
               className={`absolute top-0.5 h-5 w-5 rounded-full aether-transition ${
-                biometrics ? 'left-[22px] bg-background' : 'left-0.5 bg-muted-foreground/40'
+                biometrics ? 'left-[22px] bg-accent-foreground' : 'left-0.5 bg-muted-foreground/40'
               }`}
             />
           </button>
@@ -132,7 +147,7 @@ export function SettingsView() {
               onClick={() => toggleModelActive(model.id)}
               className={`rounded-lg px-3 py-1.5 text-[10px] font-medium aether-transition ${
                 model.active
-                  ? 'bg-foreground text-background'
+                  ? 'bg-accent text-accent-foreground'
                   : 'border text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -156,12 +171,12 @@ export function SettingsView() {
           onChange={(e) => setOllamaKey(e.target.value)}
           placeholder="API Key"
           type="password"
-          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-foreground/30 aether-transition"
+          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-accent aether-transition"
         />
         <select
           value={ollamaModel}
           onChange={(e) => setOllamaModel(e.target.value)}
-          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-foreground/30 aether-transition"
+          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-accent aether-transition"
         >
           <option value="llama3">Llama 3</option>
           <option value="mistral">Mistral</option>
