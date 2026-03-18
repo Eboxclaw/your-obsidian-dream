@@ -6,7 +6,6 @@ export interface NoteTemplate {
   content: string;
   tags: string[];
   roles: UserRole[];
-  isCustom?: boolean;
 }
 
 export interface KanbanTemplate {
@@ -14,20 +13,10 @@ export interface KanbanTemplate {
   title: string;
   columns: { title: string; cards: string[] }[];
   roles: UserRole[];
-  isCustom?: boolean;
-}
-
-export interface TaskTemplate {
-  id: string;
-  title: string;
-  description: string;
-  subtasks: string[];
-  tags: string[];
-  roles: UserRole[];
-  isCustom?: boolean;
 }
 
 export const NOTE_TEMPLATES: NoteTemplate[] = [
+  // General
   {
     id: 'nt-brainstorm',
     title: 'Brainstorm',
@@ -35,6 +24,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     tags: ['brainstorm'],
     roles: ['general', 'writer', 'pm', 'developer', 'analyst', 'researcher'],
   },
+  // Researcher
   {
     id: 'nt-literature-review',
     title: 'Literature Review',
@@ -49,6 +39,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     tags: ['experiment', 'research'],
     roles: ['researcher', 'analyst'],
   },
+  // Writer
   {
     id: 'nt-draft',
     title: 'Writing Draft',
@@ -63,6 +54,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     tags: ['character', 'writing'],
     roles: ['writer'],
   },
+  // PM
   {
     id: 'nt-meeting-notes',
     title: 'Meeting Notes',
@@ -77,6 +69,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     tags: ['project', 'brief'],
     roles: ['pm'],
   },
+  // Developer
   {
     id: 'nt-architecture-doc',
     title: 'Architecture Doc',
@@ -91,6 +84,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     tags: ['bug', 'dev'],
     roles: ['developer'],
   },
+  // Analyst
   {
     id: 'nt-analysis-report',
     title: 'Analysis Report',
@@ -104,87 +98,6 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     content: `# Query Notebook: [Dataset]\n\n## Context\n\n\n## Queries\n\n### Query 1: [Description]\n\n\`\`\`sql\nSELECT * FROM table\nWHERE condition\n\`\`\`\n\n**Result:**\n\n### Query 2: [Description]\n\n\`\`\`sql\n\n\`\`\`\n\n**Result:**\n\n## Insights\n\n- \n`,
     tags: ['query', 'data'],
     roles: ['analyst', 'developer'],
-  },
-];
-
-export const TASK_TEMPLATES: TaskTemplate[] = [
-  {
-    id: 'tt-todo',
-    title: 'To-Do',
-    description: 'Simple task with checklist',
-    subtasks: ['Step 1', 'Step 2', 'Step 3'],
-    tags: ['todo'],
-    roles: ['general', 'writer', 'pm', 'developer', 'analyst', 'researcher'],
-  },
-  {
-    id: 'tt-trading-journal',
-    title: 'Trading Journal',
-    description: 'Log a trade with entry, exit, and analysis',
-    subtasks: [
-      'Define entry criteria',
-      'Set stop loss & take profit',
-      'Execute trade',
-      'Record outcome',
-      'Post-trade analysis',
-    ],
-    tags: ['trading', 'journal'],
-    roles: ['general', 'analyst'],
-  },
-  {
-    id: 'tt-research',
-    title: 'Research Task',
-    description: 'Structured research with sources and synthesis',
-    subtasks: [
-      'Define research question',
-      'Gather sources',
-      'Read & annotate',
-      'Synthesize findings',
-      'Write summary',
-    ],
-    tags: ['research'],
-    roles: ['general', 'researcher', 'analyst', 'writer'],
-  },
-  {
-    id: 'tt-bug-fix',
-    title: 'Bug Fix',
-    description: 'Track a bug from report to resolution',
-    subtasks: [
-      'Reproduce the bug',
-      'Identify root cause',
-      'Implement fix',
-      'Write tests',
-      'Deploy & verify',
-    ],
-    tags: ['bug', 'dev'],
-    roles: ['developer'],
-  },
-  {
-    id: 'tt-sprint-item',
-    title: 'Sprint Item',
-    description: 'A sprint work item with acceptance criteria',
-    subtasks: [
-      'Review requirements',
-      'Break into subtasks',
-      'Implement',
-      'Code review',
-      'QA & deploy',
-    ],
-    tags: ['sprint', 'agile'],
-    roles: ['developer', 'pm'],
-  },
-  {
-    id: 'tt-content-piece',
-    title: 'Content Piece',
-    description: 'Create content from ideation to publish',
-    subtasks: [
-      'Outline',
-      'First draft',
-      'Edit & revise',
-      'Add visuals',
-      'Publish',
-    ],
-    tags: ['content', 'writing'],
-    roles: ['writer'],
   },
 ];
 
@@ -259,10 +172,9 @@ export const KANBAN_TEMPLATES: KanbanTemplate[] = [
 ];
 
 export function getTemplatesForRole(role: UserRole | null) {
-  if (!role) return { notes: NOTE_TEMPLATES, kanban: KANBAN_TEMPLATES, tasks: TASK_TEMPLATES };
+  if (!role) return { notes: NOTE_TEMPLATES, kanban: KANBAN_TEMPLATES };
   return {
     notes: NOTE_TEMPLATES.filter((t) => t.roles.includes(role)),
     kanban: KANBAN_TEMPLATES.filter((t) => t.roles.includes(role)),
-    tasks: TASK_TEMPLATES.filter((t) => t.roles.includes(role)),
   };
 }
