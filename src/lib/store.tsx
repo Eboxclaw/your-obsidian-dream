@@ -209,8 +209,8 @@ export const useStore = create<AppStore>()(
     renameFolder: (id, name) =>
       set((s) => ({ folders: s.folders.map((f) => (f.id === id ? { ...f, name } : f)) })),
 
-    deleteFolder: async (id) => {
-      await tc.folderDelete(id);
+    deleteFolder: (id) => {
+      tc.folderDelete(id);
       set((s) => ({
         folders: s.folders.filter((f) => f.id !== id),
         notes: s.notes.map((n) => (n.folderId === id ? { ...n, folderId: null } : n)),
