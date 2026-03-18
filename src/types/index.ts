@@ -63,6 +63,9 @@ export interface AgentConfig {
   id: string;
   name: string;
   description: string;
+  model: string;
+  skillIds: string[];
+  roleIds: string[];
   icon: string;
   active: boolean;
 }

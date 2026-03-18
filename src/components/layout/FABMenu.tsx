@@ -76,13 +76,13 @@ export function FABMenu() {
       {/* FAB Button — fixed bottom-LEFT corner */}
       <button
         onClick={ui.fabOpen ? handleClose : toggleFab}
-        className={`fixed bottom-[7.5rem] left-5 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg aether-transition ${
+        className={`fixed bottom-[7.5rem] right-5 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-lg aether-transition ${
           ui.fabOpen
             ? 'bg-muted text-foreground rotate-45'
             : 'bg-accent text-accent-foreground'
         }`}
       >
-        <Plus className="h-5 w-5" />
+        <Plus className="h-4 w-4" />
       </button>
 
       {/* Full-screen overlay */}

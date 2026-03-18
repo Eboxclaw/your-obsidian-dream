@@ -335,9 +335,14 @@ export const useStore = create<AppStore>()(
       roles: [],
       agentSessions: DEFAULT_SESSIONS,
 
-      addAgent: (name, description) =>
+      addAgent: (name, description, model = 'gpt-4o', skillIds = [], roleIds = []) =>
         set((s) => ({
-          agents: [...s.agents, { id: createId(), name, description, icon: 'bot', active: true }],
+          agents: [...s.agents, { id: createId(), name, description, model, skillIds, roleIds, icon: 'bot', active: true }],
+        })),
+
+      updateAgent: (id, updates) =>
+        set((s) => ({
+          agents: s.agents.map((a) => (a.id === id ? { ...a, ...updates } : a)),
         })),
 
       toggleAgent: (id) =>
@@ -351,8 +356,14 @@ export const useStore = create<AppStore>()(
       addSkill: (name, description) =>
         set((s) => ({ skills: [...s.skills, { id: createId(), name, description }] })),
 
+      removeSkill: (id) =>
+        set((s) => ({ skills: s.skills.filter((sk) => sk.id !== id) })),
+
       addRole: (name, description) =>
         set((s) => ({ roles: [...s.roles, { id: createId(), name, description }] })),
+
+      removeRole: (id) =>
+        set((s) => ({ roles: s.roles.filter((r) => r.id !== id) })),
 
       addAgentSession: () => {
         const session: AgentSession = {
