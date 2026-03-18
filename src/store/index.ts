@@ -102,11 +102,14 @@ interface AppStore {
   skills: AgentSkill[];
   roles: AgentRole[];
   agentSessions: AgentSession[];
-  addAgent: (name: string, description: string) => void;
+  addAgent: (name: string, description: string, model?: string, skillIds?: string[], roleIds?: string[]) => void;
+  updateAgent: (id: string, updates: Partial<AgentConfig>) => void;
   toggleAgent: (id: string) => void;
   removeAgent: (id: string) => void;
   addSkill: (name: string, description: string) => void;
+  removeSkill: (id: string) => void;
   addRole: (name: string, description: string) => void;
+  removeRole: (id: string) => void;
   addAgentSession: () => AgentSession;
   removeAgentSession: (id: string) => void;
   addMessageToSession: (sessionId: string, msg: AgentMessage) => void;
