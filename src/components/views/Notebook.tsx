@@ -34,8 +34,10 @@ export function Notebook() {
   }
 
   const isPrivateTab = ui.notesTab === 'private';
+  const activeFolderId = useStore((s) => s.ui.activeFolderId);
   const filteredNotes = notes
     .filter((n) => (isPrivateTab ? n.isPrivate : !n.isPrivate))
+    .filter((n) => !activeFolderId || n.folderId === activeFolderId)
     .filter((n) => !search || n.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime());
 
