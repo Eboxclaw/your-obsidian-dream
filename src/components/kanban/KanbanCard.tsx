@@ -46,7 +46,7 @@ export function KanbanCardComponent({ card }: Props) {
         <button
           {...attributes}
           {...listeners}
-          className="mt-0.5 shrink-0 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100 aether-transition"
+          className="mt-0.5 shrink-0 cursor-grab text-muted-foreground sm:opacity-0 sm:group-hover:opacity-100 aether-transition"
         >
           <GripVertical className="h-3 w-3" />
         </button>
