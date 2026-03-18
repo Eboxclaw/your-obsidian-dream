@@ -66,10 +66,10 @@ export function FABMenu() {
 
   return (
     <>
-      {/* FAB Button */}
+      {/* FAB Button — centered */}
       <button
         onClick={ui.fabOpen ? handleClose : toggleFab}
-        className={`absolute -top-14 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg aether-transition ${
+        className={`absolute -top-6 left-1/2 -translate-x-1/2 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg aether-transition ${
           ui.fabOpen
             ? 'bg-muted text-foreground rotate-45'
             : 'bg-primary text-primary-foreground'
@@ -82,7 +82,7 @@ export function FABMenu() {
       {ui.fabOpen && (
         <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" onClick={handleClose}>
           <div
-            className="absolute bottom-32 right-5 w-72 rounded-2xl border bg-card p-4 shadow-xl animate-fade-in"
+            className="absolute bottom-32 left-1/2 -translate-x-1/2 w-72 rounded-2xl border bg-card p-4 shadow-xl animate-fade-in"
             onClick={(e) => e.stopPropagation()}
           >
             {step === 'menu' ? (

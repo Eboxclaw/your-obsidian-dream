@@ -6,9 +6,9 @@ function generateResponse(input: string, noteCount: number): string {
   const lower = input.toLowerCase();
   if (lower.includes('summarize') || lower.includes('summary'))
     return `You have **${noteCount} notes** in your vault. I can help you organize and summarize them.`;
-  if (lower.includes('note'))
+  if (lower.includes('note') || lower.includes('create a new note'))
     return "I can help you create a note! Use the **+** button or tell me what you'd like to write about.";
-  if (lower.includes('task'))
+  if (lower.includes('task') || lower.includes('create a new task'))
     return "Ready to create a task! Head to the **Tasks** tab or I can set one up for you.";
   return "I'm your local assistant. I can help with notes, tasks, brainstorming, and more. What would you like to do?";
 }
@@ -30,15 +30,16 @@ export function InlineAgent() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [session?.messages.length]);
 
-  const handleSend = () => {
-    if (!input.trim() || !session || isThinking) return;
-    const userMsg = { id: crypto.randomUUID(), role: 'user' as const, text: input.trim(), timestamp: new Date().toISOString() };
+  const handleSend = (text?: string) => {
+    const msg = text || input.trim();
+    if (!msg || !session || isThinking) return;
+    const userMsg = { id: crypto.randomUUID(), role: 'user' as const, text: msg, timestamp: new Date().toISOString() };
     addMessageToSession(session.id, userMsg);
     setInput('');
     setIsThinking(true);
 
     setTimeout(() => {
-      const response = generateResponse(input, notes.length);
+      const response = generateResponse(msg, notes.length);
       addMessageToSession(session.id, {
         id: crypto.randomUUID(),
         role: 'agent',
@@ -47,6 +48,13 @@ export function InlineAgent() {
       });
       setIsThinking(false);
     }, 500 + Math.random() * 600);
+  };
+
+  const handleQuickAction = (action: string) => {
+    if (!ui.inlineAgentOpen) {
+      toggleInlineAgent();
+    }
+    setInput(action);
   };
 
   if (!ui.inlineAgentOpen) {
@@ -150,7 +158,7 @@ export function InlineAgent() {
             disabled={isThinking}
           />
           <button
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!input.trim() || isThinking}
             className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-30 aether-transition"
           >
@@ -159,10 +167,16 @@ export function InlineAgent() {
         </div>
         <div className="flex items-center justify-between mt-1.5 px-1">
           <div className="flex gap-1.5">
-            <button className="rounded-full border px-2.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground aether-transition">
+            <button
+              onClick={() => handleQuickAction('Create a new note')}
+              className="rounded-full border px-2.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground aether-transition"
+            >
               New Note
             </button>
-            <button className="rounded-full border px-2.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground aether-transition">
+            <button
+              onClick={() => handleQuickAction('Create a new task')}
+              className="rounded-full border px-2.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground aether-transition"
+            >
               New Task
             </button>
           </div>
