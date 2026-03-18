@@ -40,7 +40,7 @@ export function InlineAgent() {
           setInput(pendingAction);
           setPendingAction(null);
         }
-        inputRef.current?.focus();
+        if (inputRef.current) inputRef.current.focus();
       }, 100);
     }
   }, [ui.inlineAgentOpen, pendingAction]);
