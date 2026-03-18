@@ -1,6 +1,6 @@
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { Home, FileText, CheckSquare, Bot, Settings } from 'lucide-react';
-import type { ViewMode } from '@/types';
+import type { ViewMode } from '@/lib/types';
 
 const items: { view: ViewMode; label: string; icon: typeof Home }[] = [
   { view: 'dashboard', label: 'Home', icon: Home },

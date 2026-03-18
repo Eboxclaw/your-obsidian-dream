@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { Bot, Send, X, Plus, WifiOff } from 'lucide-react';
 
 function generateResponse(input: string, noteCount: number): string {

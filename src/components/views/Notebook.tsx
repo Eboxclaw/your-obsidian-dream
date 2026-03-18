@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { NoteEditor } from '@/components/editor/NoteEditor';
 import { FileText, Lock, Search, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';

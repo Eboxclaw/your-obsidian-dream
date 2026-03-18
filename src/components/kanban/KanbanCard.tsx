@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useStore } from '@/store';
-import type { KanbanCard } from '@/types';
+import { useStore } from '@/lib/store';
+import type { KanbanCard } from '@/lib/types';
 import { GripVertical, CheckSquare, Square, Trash2 } from 'lucide-react';
 
 interface Props {

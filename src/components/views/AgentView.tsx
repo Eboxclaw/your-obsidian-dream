@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { Bot, Plus, Zap, Users, X, Pencil, Trash2, ChevronDown, Check } from 'lucide-react';
 
 type AgentTab = 'agents' | 'skills' | 'roles';

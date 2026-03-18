@@ -1,4 +1,4 @@
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { useBacklinks } from '@/hooks/use-wikilinks';
 import { format } from 'date-fns';
 

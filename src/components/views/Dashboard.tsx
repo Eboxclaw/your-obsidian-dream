@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { format } from 'date-fns';
 import { FileText, CheckSquare, Bot, GitFork, Sparkles, Shield, ArrowRight } from 'lucide-react';
 import {

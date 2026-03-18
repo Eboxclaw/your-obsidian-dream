@@ -9,7 +9,7 @@ import {
   closestCorners,
   DragOverlay,
 } from '@dnd-kit/core';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { KanbanColumnComponent } from '@/components/kanban/KanbanColumn';
 import { Plus } from 'lucide-react';
 

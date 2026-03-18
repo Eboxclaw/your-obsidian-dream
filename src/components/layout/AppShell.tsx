@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { Fingerprint } from 'lucide-react';
 import { Dashboard } from '@/components/views/Dashboard';
 import { Notebook } from '@/components/views/Notebook';

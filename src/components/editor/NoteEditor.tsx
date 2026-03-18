@@ -3,8 +3,8 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
-import { useStore } from '@/store';
-import type { Note } from '@/types';
+import { useStore } from '@/lib/store';
+import type { Note } from '@/lib/types';
 
 interface NoteEditorProps {
   note: Note;

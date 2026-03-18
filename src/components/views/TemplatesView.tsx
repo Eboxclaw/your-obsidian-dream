@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { getTemplatesForRole } from '@/lib/templates';
 import { FileText, Columns3, CheckSquare, Plus, Pencil, Trash2, X } from 'lucide-react';
 import type { NoteTemplate, KanbanTemplate, TaskTemplate } from '@/lib/templates';

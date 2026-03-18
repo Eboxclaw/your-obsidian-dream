@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { Search, FileText, LayoutDashboard, BookOpen, Columns3, Plus, GitFork, Bot, FileStack, Settings } from 'lucide-react';
 
 export function CommandPalette() {
