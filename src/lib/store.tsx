@@ -100,7 +100,7 @@ interface AppStore {
 
   // Folders
   folders: Folder[];
-  addFolder: (name: string, parentId?: string | null) => Promise<Folder>;
+  addFolder: (name: string, parentId?: string | null) => Folder;
   renameFolder: (id: string, name: string) => void;
   deleteFolder: (id: string) => Promise<void>;
 
