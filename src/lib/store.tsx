@@ -257,8 +257,8 @@ export const useStore = create<AppStore>()(
       }
     },
 
-    deleteNote: async (id) => {
-      await tc.noteDelete(id);
+    deleteNote: (id) => {
+      tc.noteDelete(id);
       set((s) => ({
         notes: s.notes.filter((n) => n.id !== id),
         ui: s.ui.activeNoteId === id ? { ...s.ui, activeNoteId: null } : s.ui,
