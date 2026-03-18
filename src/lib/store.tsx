@@ -198,15 +198,11 @@ export const useStore = create<AppStore>()(
     // -----------------------------------------------------------------
     folders: [DEFAULT_FOLDER],
 
-    addFolder: async (name, parentId = null) => {
-      const result = await tc.folderCreate(name, parentId);
-      if (result) {
-        set((s) => ({ folders: [...s.folders, result] }));
-        return result;
-      }
-      // Fallback for web preview
+    addFolder: (name, parentId = null) => {
       const folder: Folder = { id: createId(), name, created: now(), parentId: parentId || null };
       set((s) => ({ folders: [...s.folders, folder] }));
+      // Fire-and-forget to backend
+      tc.folderCreate(name, parentId);
       return folder;
     },
 
