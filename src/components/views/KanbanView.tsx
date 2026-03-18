@@ -85,19 +85,19 @@ export function KanbanView() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b px-6 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 sm:px-6 py-3">
         <h1 className="text-sm font-semibold tracking-tight text-foreground">
           {board.title}
         </h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={handleNewTask}
-            className="flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:border-primary aether-transition"
+            className="flex items-center gap-1.5 rounded-lg border border-dashed px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-xs text-muted-foreground hover:text-foreground hover:border-primary aether-transition"
           >
             <Plus className="h-3.5 w-3.5" />
             New Task
           </button>
-          <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+          <span className="hidden sm:inline font-mono text-[10px] tabular-nums text-muted-foreground">
             {cards.filter((c) => c.boardId === board.id).length} cards · {board.columns.length} columns
           </span>
         </div>

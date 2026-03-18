@@ -225,7 +225,7 @@ export function Notebook() {
                     e.stopPropagation();
                     deleteNote(note.id);
                   }}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 aether-transition shrink-0"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 aether-transition shrink-0"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>

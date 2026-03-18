@@ -35,7 +35,7 @@ export function FolderSwitcher() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setCreating(false); }} />
-          <div className="absolute left-0 top-full mt-1 z-50 w-52 rounded-xl border bg-popover p-1.5 shadow-lg animate-fade-in">
+          <div className="absolute right-0 top-full mt-1 z-50 w-52 rounded-xl border bg-popover p-1.5 shadow-lg animate-fade-in">
             {/* All folders option */}
             <button
               onClick={() => { setActiveFolder(null); setOpen(false); }}
