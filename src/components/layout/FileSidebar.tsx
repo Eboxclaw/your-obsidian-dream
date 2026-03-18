@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { Plus, Search, Trash2 } from 'lucide-react';
 
 export function FileSidebar() {

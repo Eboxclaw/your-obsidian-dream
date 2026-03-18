@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useStore } from '@/store';
-import type { UserRole } from '@/types';
+import { useStore } from '@/lib/store';
+import type { UserRole } from '@/lib/types';
 import {
   ChevronRight,
   ChevronLeft,

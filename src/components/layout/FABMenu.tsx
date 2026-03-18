@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { Plus, X, FileText, CheckSquare, FolderPlus, Lock, ArrowLeft, FolderOpen, ChevronRight } from 'lucide-react';
 
 const CREATE_OPTIONS = [

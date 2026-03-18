@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { Search, FileText, LayoutDashboard, BookOpen, Columns3, Plus, GitFork, Bot, FileStack, Settings } from 'lucide-react';
 
 export function CommandPalette() {
@@ -54,7 +54,7 @@ export function CommandPalette() {
     : actions;
 
   useEffect(() => {
-    inputRef.current?.focus();
+    if (inputRef.current) inputRef.current.focus();
   }, []);
 
   useEffect(() => {

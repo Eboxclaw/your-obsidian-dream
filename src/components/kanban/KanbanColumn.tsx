@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { KanbanCardComponent } from '@/components/kanban/KanbanCard';
-import type { KanbanColumn, KanbanCard } from '@/types';
+import type { KanbanColumn, KanbanCard } from '@/lib/types';
 import { MoreHorizontal, Plus, Trash2 } from 'lucide-react';
 
 interface Props {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { getTemplatesForRole } from '@/lib/templates';
 import { FileText, Columns3, CheckSquare, Plus, Pencil, Trash2, X } from 'lucide-react';
 import type { NoteTemplate, KanbanTemplate, TaskTemplate } from '@/lib/templates';
@@ -30,7 +30,7 @@ export function TemplatesView() {
     template.columns.forEach((col) => {
       store.addColumn(board.id, col.title);
       const updatedBoard = store.boards.find((b) => b.id === board.id);
-      const newCol = updatedBoard?.columns.find((c) => c.title === col.title);
+      const newCol = updatedBoard && updatedBoard.columns.find((c) => c.title === col.title);
       if (newCol) col.cards.forEach((cardTitle) => store.addCard(board.id, newCol.id, cardTitle));
     });
     store.setActiveBoard(board.id);

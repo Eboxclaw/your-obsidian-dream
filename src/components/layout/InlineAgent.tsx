@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { Bot, Send, X, Plus, WifiOff } from 'lucide-react';
 
 function generateResponse(input: string, noteCount: number): string {
@@ -26,11 +26,11 @@ export function InlineAgent() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const session = agentSessions.find((s) => s.id === ui.activeAgentSessionId) ?? agentSessions[0];
+  const session = agentSessions.find((s) => s.id === ui.activeAgentSessionId) || agentSessions[0];
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [session?.messages.length]);
+    if (scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [session && session.messages.length]);
 
   // Auto-focus input when agent opens, and apply pending action
   useEffect(() => {
@@ -40,7 +40,7 @@ export function InlineAgent() {
           setInput(pendingAction);
           setPendingAction(null);
         }
-        inputRef.current?.focus();
+        if (inputRef.current) inputRef.current.focus();
       }, 100);
     }
   }, [ui.inlineAgentOpen, pendingAction]);
@@ -71,7 +71,7 @@ export function InlineAgent() {
       toggleInlineAgent();
     } else {
       setInput(action);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 50);
     }
   };
 
@@ -119,7 +119,7 @@ export function InlineAgent() {
             key={s.id}
             onClick={() => setActiveAgentSession(s.id)}
             className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium shrink-0 aether-transition ${
-              s.id === session?.id
+              s.id === (session ? session.id : null)
                 ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
@@ -150,7 +150,7 @@ export function InlineAgent() {
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-auto px-4 py-3 space-y-2.5" style={{ minHeight: 120 }}>
-        {session?.messages.map((msg) => (
+        {session && session.messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`max-w-[80%] rounded-xl px-3 py-2 text-xs leading-relaxed ${

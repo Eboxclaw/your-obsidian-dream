@@ -8,7 +8,7 @@ import {
   type SimulationNodeDatum,
   type SimulationLinkDatum,
 } from 'd3-force';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 import { ZoomIn, ZoomOut, Filter, X } from 'lucide-react';
 
 interface GraphNode extends SimulationNodeDatum {

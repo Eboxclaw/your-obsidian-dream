@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useStore } from '@/store';
+import { useStore } from '@/lib/store';
 
 export function useBacklinks(noteId: string | null) {
   const notes = useStore((s) => s.notes);
