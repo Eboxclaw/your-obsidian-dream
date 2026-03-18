@@ -119,7 +119,7 @@ export function InlineAgent() {
             key={s.id}
             onClick={() => setActiveAgentSession(s.id)}
             className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium shrink-0 aether-transition ${
-              s.id === session?.id
+              s.id === (session ? session.id : null)
                 ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
