@@ -294,10 +294,8 @@ export const useStore = create<AppStore>()(
       tc.boardCreate(title, activeFolderId);
       return board;
     },
-      };
-      set((s) => ({ boards: [...s.boards, board] }));
-      return board;
-    },
+
+
 
     addCard: (boardId, columnId, title) => {
       const card: KanbanCard = {
