@@ -275,14 +275,8 @@ export const useStore = create<AppStore>()(
     boards: [DEFAULT_BOARD],
     cards: DEFAULT_CARDS,
 
-    addBoard: async (title) => {
+    addBoard: (title) => {
       const activeFolderId = get().ui.activeFolderId;
-      const result = await tc.boardCreate(title, activeFolderId);
-      if (result) {
-        set((s) => ({ boards: [...s.boards, result] }));
-        return result;
-      }
-      // Fallback for web preview
       const board: KanbanBoard = {
         id: createId(),
         title,
@@ -294,6 +288,12 @@ export const useStore = create<AppStore>()(
         created: now(),
         modified: now(),
         folderId: activeFolderId,
+      };
+      set((s) => ({ boards: [...s.boards, board] }));
+      // Fire-and-forget to backend
+      tc.boardCreate(title, activeFolderId);
+      return board;
+    },
       };
       set((s) => ({ boards: [...s.boards, board] }));
       return board;
