@@ -143,7 +143,7 @@ export function Dashboard() {
         className="relative rounded-2xl border bg-card p-4 ghost-card cursor-pointer overflow-hidden"
         onClick={() => setView('graph')}
       >
-        <SmokeParticles count={3} />
+        
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
             <GitFork className="h-4 w-4 text-muted-foreground" />
