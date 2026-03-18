@@ -54,7 +54,7 @@ export function CommandPalette() {
     : actions;
 
   useEffect(() => {
-    inputRef.current?.focus();
+    if (inputRef.current) inputRef.current.focus();
   }, []);
 
   useEffect(() => {

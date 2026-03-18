@@ -94,7 +94,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const handleTitleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault();
-      editor?.commands.focus();
+      if (editor) editor.commands.focus();
     }
   };
 
