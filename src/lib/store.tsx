@@ -108,7 +108,7 @@ interface AppStore {
   notes: Note[];
   addNote: (title: string, parentId?: string | null, isPrivate?: boolean) => Note;
   updateNote: (id: string, updates: Partial<Note>) => void;
-  deleteNote: (id: string) => Promise<void>;
+  deleteNote: (id: string) => void;
   getNoteById: (id: string) => Note | undefined;
   getNoteByTitle: (title: string) => Note | undefined;
 
