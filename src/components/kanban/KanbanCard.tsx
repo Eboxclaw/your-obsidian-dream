@@ -46,7 +46,7 @@ export function KanbanCardComponent({ card }: Props) {
         <button
           {...attributes}
           {...listeners}
-          className="mt-0.5 shrink-0 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100 aether-transition"
+          className="mt-0.5 shrink-0 cursor-grab text-muted-foreground sm:opacity-0 sm:group-hover:opacity-100 aether-transition"
         >
           <GripVertical className="h-3 w-3" />
         </button>
@@ -89,7 +89,7 @@ export function KanbanCardComponent({ card }: Props) {
         </div>
         <button
           onClick={() => deleteCard(card.id)}
-          className="mt-0.5 shrink-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 aether-transition"
+          className="mt-0.5 shrink-0 text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 aether-transition"
         >
           <Trash2 className="h-3 w-3" />
         </button>
