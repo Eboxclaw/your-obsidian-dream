@@ -115,7 +115,7 @@ interface AppStore {
   // Kanban
   boards: KanbanBoard[];
   cards: KanbanCard[];
-  addBoard: (title: string) => Promise<KanbanBoard>;
+  addBoard: (title: string) => KanbanBoard;
   addCard: (boardId: string, columnId: string, title: string) => KanbanCard;
   updateCard: (id: string, updates: Partial<KanbanCard>) => void;
   deleteCard: (id: string) => void;
