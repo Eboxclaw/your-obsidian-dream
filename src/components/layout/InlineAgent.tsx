@@ -26,7 +26,7 @@ export function InlineAgent() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const session = agentSessions.find((s) => s.id === ui.activeAgentSessionId) ?? agentSessions[0];
+  const session = agentSessions.find((s) => s.id === ui.activeAgentSessionId) || agentSessions[0];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
