@@ -11,9 +11,12 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { FABMenu } from '@/components/layout/FABMenu';
 import { InlineAgent } from '@/components/layout/InlineAgent';
+import { FolderSwitcher } from '@/components/layout/FolderSwitcher';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { Search } from 'lucide-react';
 import logoSvg from '@/assets/logo.svg';
+
+const VIEWS_WITH_FOLDER_SWITCHER: string[] = ['dashboard', 'notebook', 'kanban', 'agent'];
 
 export function AppShell() {
   const { ui, onboarding, toggleCommandPalette, addNote, setActiveNote, setView } = useStore();
@@ -54,6 +57,8 @@ export function AppShell() {
     settings: 'Settings',
   }[ui.activeView];
 
+  const showFolderSwitcher = VIEWS_WITH_FOLDER_SWITCHER.includes(ui.activeView);
+
   return (
     <div className="flex h-screen flex-col bg-background overflow-hidden">
       {/* Top bar */}
@@ -73,12 +78,15 @@ export function AppShell() {
             </span>
           )}
         </div>
-        <button
-          onClick={toggleCommandPalette}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-hover aether-transition"
-        >
-          <Search className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          {showFolderSwitcher && <FolderSwitcher />}
+          <button
+            onClick={toggleCommandPalette}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-hover aether-transition"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        </div>
       </header>
 
       {/* Main content */}
@@ -95,7 +103,7 @@ export function AppShell() {
       {/* Inline agent */}
       <InlineAgent />
 
-      {/* FAB — fixed position, rendered independently */}
+      {/* FAB — fixed position */}
       <FABMenu />
 
       {/* Bottom navigation */}

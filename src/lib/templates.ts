@@ -15,8 +15,16 @@ export interface KanbanTemplate {
   roles: UserRole[];
 }
 
+export interface TaskTemplate {
+  id: string;
+  title: string;
+  description: string;
+  subtasks: string[];
+  tags: string[];
+  roles: UserRole[];
+}
+
 export const NOTE_TEMPLATES: NoteTemplate[] = [
-  // General
   {
     id: 'nt-brainstorm',
     title: 'Brainstorm',
@@ -24,7 +32,6 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     tags: ['brainstorm'],
     roles: ['general', 'writer', 'pm', 'developer', 'analyst', 'researcher'],
   },
-  // Researcher
   {
     id: 'nt-literature-review',
     title: 'Literature Review',
@@ -39,7 +46,6 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     tags: ['experiment', 'research'],
     roles: ['researcher', 'analyst'],
   },
-  // Writer
   {
     id: 'nt-draft',
     title: 'Writing Draft',
@@ -54,7 +60,6 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     tags: ['character', 'writing'],
     roles: ['writer'],
   },
-  // PM
   {
     id: 'nt-meeting-notes',
     title: 'Meeting Notes',
@@ -69,7 +74,6 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     tags: ['project', 'brief'],
     roles: ['pm'],
   },
-  // Developer
   {
     id: 'nt-architecture-doc',
     title: 'Architecture Doc',
@@ -84,7 +88,6 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     tags: ['bug', 'dev'],
     roles: ['developer'],
   },
-  // Analyst
   {
     id: 'nt-analysis-report',
     title: 'Analysis Report',
@@ -171,10 +174,62 @@ export const KANBAN_TEMPLATES: KanbanTemplate[] = [
   },
 ];
 
+export const TASK_TEMPLATES: TaskTemplate[] = [
+  {
+    id: 'tt-todo',
+    title: 'To-Do',
+    description: 'A simple to-do item with checklist subtasks.',
+    subtasks: ['Step 1', 'Step 2', 'Step 3'],
+    tags: ['todo'],
+    roles: ['general', 'writer', 'pm', 'developer', 'analyst', 'researcher'],
+  },
+  {
+    id: 'tt-trading-journal',
+    title: 'Trading Journal',
+    description: 'Log a trade with entry, exit, and reflection.',
+    subtasks: ['Record entry point', 'Set stop-loss & take-profit', 'Log exit & P/L', 'Write reflection'],
+    tags: ['trading', 'journal'],
+    roles: ['general', 'analyst'],
+  },
+  {
+    id: 'tt-research',
+    title: 'Research',
+    description: 'Research a topic with structured investigation steps.',
+    subtasks: ['Define research question', 'Gather sources', 'Summarize findings', 'Write conclusion'],
+    tags: ['research'],
+    roles: ['general', 'researcher', 'analyst'],
+  },
+  {
+    id: 'tt-bugfix',
+    title: 'Bug Fix',
+    description: 'Track a bug from discovery to resolution.',
+    subtasks: ['Reproduce the bug', 'Identify root cause', 'Implement fix', 'Write tests', 'Deploy & verify'],
+    tags: ['bug', 'dev'],
+    roles: ['developer'],
+  },
+  {
+    id: 'tt-sprint-item',
+    title: 'Sprint Item',
+    description: 'A sprint work item with planning and review phases.',
+    subtasks: ['Estimate story points', 'Break into sub-tasks', 'Implement', 'Code review', 'QA & merge'],
+    tags: ['sprint', 'agile'],
+    roles: ['developer', 'pm'],
+  },
+  {
+    id: 'tt-content-piece',
+    title: 'Content Piece',
+    description: 'Plan, draft, and publish a piece of content.',
+    subtasks: ['Outline topic', 'Write first draft', 'Edit & proofread', 'Add visuals', 'Publish'],
+    tags: ['content', 'writing'],
+    roles: ['writer', 'general'],
+  },
+];
+
 export function getTemplatesForRole(role: UserRole | null) {
-  if (!role) return { notes: NOTE_TEMPLATES, kanban: KANBAN_TEMPLATES };
+  if (!role) return { notes: NOTE_TEMPLATES, kanban: KANBAN_TEMPLATES, tasks: TASK_TEMPLATES };
   return {
     notes: NOTE_TEMPLATES.filter((t) => t.roles.includes(role)),
     kanban: KANBAN_TEMPLATES.filter((t) => t.roles.includes(role)),
+    tasks: TASK_TEMPLATES.filter((t) => t.roles.includes(role)),
   };
 }

@@ -1,3 +1,10 @@
+export interface Folder {
+  id: string;
+  name: string;
+  created: string;
+  parentId: string | null;
+}
+
 export interface Note {
   id: string;
   title: string;
@@ -8,6 +15,7 @@ export interface Note {
   parentId: string | null;
   isFolder: boolean;
   isPrivate: boolean;
+  folderId: string | null;
 }
 
 export interface WikiLink {
@@ -21,6 +29,7 @@ export interface KanbanBoard {
   columns: KanbanColumn[];
   created: string;
   modified: string;
+  folderId: string | null;
 }
 
 export interface KanbanColumn {
@@ -83,6 +92,16 @@ export interface AgentSession {
   messages: AgentMessage[];
 }
 
+export interface CustomTemplate {
+  id: string;
+  type: 'note' | 'task';
+  title: string;
+  content: string;
+  tags: string[];
+  columns?: { title: string; cards: string[] }[];
+  created: string;
+}
+
 export interface OnboardingState {
   completed: boolean;
   step: number;
@@ -104,4 +123,5 @@ export interface UIState {
   inlineAgentOpen: boolean;
   activeAgentSessionId: string | null;
   notesTab: 'all' | 'private';
+  activeFolderId: string | null;
 }

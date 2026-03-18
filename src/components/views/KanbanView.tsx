@@ -15,7 +15,10 @@ import { Plus } from 'lucide-react';
 
 export function KanbanView() {
   const { ui, boards, cards, addColumn, moveCard, addCard } = useStore();
-  const board = boards.find((b) => b.id === ui.activeBoardId);
+  const folderBoards = ui.activeFolderId
+    ? boards.filter((b) => b.folderId === ui.activeFolderId)
+    : boards;
+  const board = folderBoards.find((b) => b.id === ui.activeBoardId) || folderBoards[0];
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [newColTitle, setNewColTitle] = useState('');
   const [showNewCol, setShowNewCol] = useState(false);
