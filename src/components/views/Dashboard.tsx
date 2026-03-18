@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { useStore } from '@/store';
 import { format } from 'date-fns';
-import { FileText, CheckSquare, Bot, GitFork } from 'lucide-react';
-
+import { FileText, CheckSquare, Bot, GitFork, Sparkles, Shield } from 'lucide-react';
 
 export function Dashboard() {
-  const { notes, boards, cards, agents, setActiveNote, setView, setActiveBoard, onboarding } = useStore();
+  const { notes, boards, cards, agents, skills, roles, setActiveNote, setView, setActiveBoard, onboarding } = useStore();
   const [tab, setTab] = useState<'notes' | 'tasks'>('notes');
 
   const recentNotes = [...notes]
     .sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime())
-    .slice(0, 5);
+    .slice(0, 3);
+
+  const recentCards = [...cards]
+    .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
+    .slice(0, 3);
 
   const totalTasks = cards.length;
   const doneTasks = cards.filter((c) => {
@@ -24,6 +27,12 @@ export function Dashboard() {
 
   const greeting = onboarding.name || 'there';
 
+  // Count wikilinks for graph preview
+  const linkCount = notes.reduce((acc, note) => {
+    const matches = note.content.match(/\[\[([^\]]+)\]\]/g);
+    return acc + (matches ? matches.length : 0);
+  }, 0);
+
   return (
     <div className="mx-auto w-full max-w-lg px-4 sm:px-5 py-6 sm:py-8 space-y-4 sm:space-y-5">
       {/* Greeting */}
@@ -36,22 +45,54 @@ export function Dashboard() {
         </p>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <div className="rounded-2xl border bg-card p-3 text-center ghost-card">
-          <FileText className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-muted-foreground mb-1" />
-          <p className="text-lg font-bold text-foreground">{notes.length}</p>
-          <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground">Notes</p>
+      {/* Knowledge Graph — TOP, large preview */}
+      <div
+        className="relative rounded-2xl border bg-card p-4 ghost-card cursor-pointer overflow-hidden"
+        onClick={() => setView('graph')}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <GitFork className="h-4 w-4 text-muted-foreground" />
+          <p className="text-xs font-medium text-foreground">Knowledge Graph</p>
+          <span className="ml-auto rounded-full border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground aether-transition">
+            Explore →
+          </span>
         </div>
-        <div className="rounded-2xl border bg-card p-3 text-center ghost-card">
-          <CheckSquare className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-muted-foreground mb-1" />
-          <p className="text-lg font-bold text-foreground">{totalTasks}</p>
-          <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground">Tasks</p>
+        <div className="flex h-44 sm:h-56 items-center justify-center rounded-xl bg-muted/30 border border-border/50">
+          <div className="text-center">
+            <GitFork className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+            <p className="text-xs text-muted-foreground">
+              {notes.length <= 1 ? 'Create notes with [[wikilinks]] to build your graph' : `${notes.length} nodes · ${linkCount} edges`}
+            </p>
+          </div>
         </div>
-        <div className="rounded-2xl border bg-card p-3 text-center ghost-card">
-          <Bot className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-muted-foreground mb-1" />
-          <p className="text-lg font-bold text-foreground">{activeAgents}</p>
-          <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground">Agents</p>
+      </div>
+
+      {/* Stats row — 5 columns */}
+      <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+        <div className="rounded-2xl border bg-card p-2.5 text-center ghost-card">
+          <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mx-auto text-muted-foreground mb-0.5" />
+          <p className="text-base font-bold text-foreground">{notes.length}</p>
+          <p className="text-[8px] sm:text-[9px] uppercase tracking-wider text-muted-foreground">Notes</p>
+        </div>
+        <div className="rounded-2xl border bg-card p-2.5 text-center ghost-card">
+          <CheckSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4 mx-auto text-muted-foreground mb-0.5" />
+          <p className="text-base font-bold text-foreground">{totalTasks}</p>
+          <p className="text-[8px] sm:text-[9px] uppercase tracking-wider text-muted-foreground">Tasks</p>
+        </div>
+        <div className="rounded-2xl border bg-card p-2.5 text-center ghost-card">
+          <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 mx-auto text-muted-foreground mb-0.5" />
+          <p className="text-base font-bold text-foreground">{activeAgents}</p>
+          <p className="text-[8px] sm:text-[9px] uppercase tracking-wider text-muted-foreground">Agents</p>
+        </div>
+        <div className="rounded-2xl border bg-card p-2.5 text-center ghost-card">
+          <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 mx-auto text-muted-foreground mb-0.5" />
+          <p className="text-base font-bold text-foreground">{skills.length}</p>
+          <p className="text-[8px] sm:text-[9px] uppercase tracking-wider text-muted-foreground">Skills</p>
+        </div>
+        <div className="rounded-2xl border bg-card p-2.5 text-center ghost-card">
+          <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 mx-auto text-muted-foreground mb-0.5" />
+          <p className="text-base font-bold text-foreground">{roles.length}</p>
+          <p className="text-[8px] sm:text-[9px] uppercase tracking-wider text-muted-foreground">Roles</p>
         </div>
       </div>
 
@@ -70,7 +111,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Recent tabs */}
+      {/* Recent — max 3 items */}
       <div>
         <div className="flex gap-4 mb-3">
           <button
@@ -100,7 +141,7 @@ export function Dashboard() {
                 <button
                   key={note.id}
                   onClick={() => { setActiveNote(note.id); setView('notebook'); }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover aether-transition"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-muted/50 aether-transition"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -115,14 +156,14 @@ export function Dashboard() {
           </div>
         ) : (
           <div className="space-y-1">
-            {cards.length === 0 ? (
+            {recentCards.length === 0 ? (
               <p className="text-xs text-muted-foreground py-4 text-center">No tasks yet</p>
             ) : (
-              cards.slice(0, 5).map((card) => (
+              recentCards.map((card) => (
                 <button
                   key={card.id}
                   onClick={() => { setActiveBoard(card.boardId); setView('kanban'); }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover aether-transition"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-muted/50 aether-transition"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <CheckSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -136,29 +177,6 @@ export function Dashboard() {
             )}
           </div>
         )}
-      </div>
-
-      {/* Knowledge Graph preview — last and larger */}
-      <div
-        className="relative rounded-2xl border bg-card p-4 ghost-card cursor-pointer overflow-hidden"
-        onClick={() => setView('graph')}
-      >
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <GitFork className="h-4 w-4 text-muted-foreground" />
-            <p className="text-xs font-medium text-foreground">Knowledge Graph</p>
-            <span className="ml-auto text-[10px] text-muted-foreground">Tap to explore →</span>
-          </div>
-          <div className="flex h-40 sm:h-48 items-center justify-center rounded-xl bg-muted/30 border border-border/50">
-            <div className="text-center">
-              <GitFork className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-              <p className="text-xs text-muted-foreground">
-                {notes.length <= 1 ? 'Create notes to see your graph' : `${notes.length} nodes connected`}
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
