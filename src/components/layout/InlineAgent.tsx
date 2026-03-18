@@ -22,13 +22,28 @@ export function InlineAgent() {
 
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const session = agentSessions.find((s) => s.id === ui.activeAgentSessionId) ?? agentSessions[0];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [session?.messages.length]);
+
+  // Auto-focus input when agent opens, and apply pending action
+  useEffect(() => {
+    if (ui.inlineAgentOpen) {
+      setTimeout(() => {
+        if (pendingAction) {
+          setInput(pendingAction);
+          setPendingAction(null);
+        }
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [ui.inlineAgentOpen, pendingAction]);
 
   const handleSend = (text?: string) => {
     const msg = text || input.trim();
@@ -52,9 +67,12 @@ export function InlineAgent() {
 
   const handleQuickAction = (action: string) => {
     if (!ui.inlineAgentOpen) {
+      setPendingAction(action);
       toggleInlineAgent();
+    } else {
+      setInput(action);
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
-    setInput(action);
   };
 
   if (!ui.inlineAgentOpen) {
@@ -73,6 +91,21 @@ export function InlineAgent() {
             Offline
           </span>
         </button>
+        {/* Quick actions when collapsed */}
+        <div className="flex gap-1.5 px-4 pb-2">
+          <button
+            onClick={() => handleQuickAction('Create a new note')}
+            className="rounded-full border px-2.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground aether-transition"
+          >
+            New Note
+          </button>
+          <button
+            onClick={() => handleQuickAction('Create a new task')}
+            className="rounded-full border px-2.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground aether-transition"
+          >
+            New Task
+          </button>
+        </div>
       </div>
     );
   }
@@ -150,6 +183,7 @@ export function InlineAgent() {
         <div className="flex items-center gap-2 rounded-xl border bg-background px-3 py-2 focus-within:border-foreground/30 aether-transition">
           <Bot className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}

@@ -66,10 +66,10 @@ export function FABMenu() {
 
   return (
     <>
-      {/* FAB Button — centered */}
+      {/* FAB Button — fixed bottom-right corner */}
       <button
         onClick={ui.fabOpen ? handleClose : toggleFab}
-        className={`absolute -top-6 left-1/2 -translate-x-1/2 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg aether-transition ${
+        className={`fixed bottom-[7.5rem] right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg aether-transition ${
           ui.fabOpen
             ? 'bg-muted text-foreground rotate-45'
             : 'bg-primary text-primary-foreground'
@@ -78,24 +78,35 @@ export function FABMenu() {
         <Plus className="h-5 w-5" />
       </button>
 
-      {/* Overlay */}
+      {/* Full-screen overlay with centered card */}
       {ui.fabOpen && (
-        <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" onClick={handleClose}>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm" onClick={handleClose}>
           <div
-            className="absolute bottom-32 left-1/2 -translate-x-1/2 w-72 rounded-2xl border bg-card p-4 shadow-xl animate-fade-in"
+            className="w-[calc(100%-2rem)] max-w-sm rounded-2xl border bg-card p-5 shadow-xl animate-fade-in"
             onClick={(e) => e.stopPropagation()}
           >
             {step === 'menu' ? (
               <>
-                <h3 className="text-sm font-semibold text-foreground mb-3">Create New</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground">Create New</h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">What do you want to create?</p>
+                  </div>
+                  <button
+                    onClick={handleClose}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-hover aether-transition"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   {CREATE_OPTIONS.map((opt) => (
                     <button
                       key={opt.id}
                       onClick={() => handleCreate(opt.id)}
-                      className="flex flex-col items-start gap-1 rounded-xl border p-3 text-left hover:bg-surface-hover ghost-card aether-transition"
+                      className="flex flex-col items-center gap-1.5 rounded-xl border p-4 text-center hover:bg-surface-hover ghost-card aether-transition"
                     >
-                      <opt.icon className="h-5 w-5 text-muted-foreground" />
+                      <opt.icon className="h-6 w-6 text-muted-foreground" />
                       <span className="text-sm font-medium text-foreground">{opt.label}</span>
                       <span className="text-[10px] text-muted-foreground">{opt.subtitle}</span>
                     </button>
@@ -104,19 +115,27 @@ export function FABMenu() {
               </>
             ) : (
               <>
-                <button
-                  onClick={() => setStep('menu')}
-                  className="text-xs text-muted-foreground hover:text-foreground mb-2 aether-transition"
-                >
-                  ← Back
-                </button>
-                <h3 className="text-sm font-semibold text-foreground mb-3">Choose Template</h3>
-                <div className="space-y-1.5">
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={() => setStep('menu')}
+                    className="text-xs text-muted-foreground hover:text-foreground aether-transition"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    onClick={handleClose}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-hover aether-transition"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <h3 className="text-base font-semibold text-foreground mb-3">Choose Template</h3>
+                <div className="space-y-2">
                   {NOTE_TEMPLATES.map((t) => (
                     <button
                       key={t.id}
                       onClick={() => handleTemplate(t)}
-                      className="flex w-full items-center rounded-lg border px-3 py-2.5 text-left text-sm font-medium text-foreground hover:bg-surface-hover ghost-card aether-transition"
+                      className="flex w-full items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium text-foreground hover:bg-surface-hover ghost-card aether-transition"
                     >
                       {t.label}
                     </button>

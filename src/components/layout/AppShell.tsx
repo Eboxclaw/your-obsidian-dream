@@ -92,11 +92,11 @@ export function AppShell() {
         {ui.activeView === 'settings' && <SettingsView />}
       </main>
 
-      {/* Bottom section: FAB floats above InlineAgent */}
-      <div className="relative shrink-0">
-        <FABMenu />
-        <InlineAgent />
-      </div>
+      {/* Inline agent */}
+      <InlineAgent />
+
+      {/* FAB — fixed position, rendered independently */}
+      <FABMenu />
 
       {/* Bottom navigation */}
       <BottomNav />
