@@ -49,8 +49,8 @@ const DEFAULT_CARDS: KanbanCard[] = [
 ];
 
 const DEFAULT_AGENTS: AgentConfig[] = [
-  { id: 'assistant', name: 'General Assistant', description: 'Helps with notes, tasks, and brainstorming', icon: 'bot', active: true },
-  { id: 'researcher', name: 'Research Agent', description: 'Summarizes and analyzes your notes', icon: 'search', active: true },
+  { id: 'assistant', name: 'General Assistant', description: 'Helps with notes, tasks, and brainstorming', model: 'gpt-4o', skillIds: [], roleIds: [], icon: 'bot', active: true },
+  { id: 'researcher', name: 'Research Agent', description: 'Summarizes and analyzes your notes', model: 'gpt-4o', skillIds: [], roleIds: [], icon: 'search', active: true },
 ];
 
 const DEFAULT_SESSIONS: AgentSession[] = [
