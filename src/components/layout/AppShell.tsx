@@ -43,8 +43,70 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  // App-level biometric lock
+  const [appUnlocked, setAppUnlocked] = useState(false);
+  const [biometricAttempted, setBiometricAttempted] = useState(false);
+
   if (!onboarding.completed) {
     return <OnboardingWizard />;
+  }
+
+  // Show biometric lock screen on app launch
+  if (!appUnlocked) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
+        <div className="w-full max-w-xs mx-4 rounded-3xl border bg-card p-8 text-center shadow-xl animate-fade-in">
+          <div className="mb-6 flex justify-center">
+            <img src={logoSvg} alt="ViBo" className="h-14 w-14 dark:drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]" />
+          </div>
+          {!biometricAttempted ? (
+            <>
+              <div className="mb-5 flex justify-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-border bg-muted">
+                  <Fingerprint className="h-10 w-10 text-foreground" />
+                </div>
+              </div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">Welcome back</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Authenticate to unlock your vault
+              </p>
+              <button
+                onClick={() => {
+                  setBiometricAttempted(true);
+                  setTimeout(() => setAppUnlocked(true), 800);
+                }}
+                className="mt-6 w-full rounded-2xl bg-primary py-3.5 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
+              >
+                Unlock with Biometrics
+              </button>
+              <button
+                onClick={() => setBiometricAttempted(true)}
+                className="mt-3 w-full rounded-2xl border py-3 text-sm text-muted-foreground hover:text-foreground aether-transition"
+              >
+                Use PIN
+              </button>
+            </>
+          ) : !appUnlocked ? (
+            <>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground mb-2">Enter PIN</h2>
+              <input
+                type="password"
+                placeholder="PIN"
+                className="w-full rounded-xl border bg-background px-4 py-3 text-center text-sm outline-none focus:border-accent aether-transition"
+                autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter') setAppUnlocked(true); }}
+              />
+              <button
+                onClick={() => setAppUnlocked(true)}
+                className="mt-4 w-full rounded-2xl bg-primary py-3.5 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
+              >
+                Unlock
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
   const viewTitle = {
