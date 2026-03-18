@@ -49,8 +49,8 @@ const DEFAULT_CARDS: KanbanCard[] = [
 ];
 
 const DEFAULT_AGENTS: AgentConfig[] = [
-  { id: 'assistant', name: 'General Assistant', description: 'Helps with notes, tasks, and brainstorming', icon: 'bot', active: true },
-  { id: 'researcher', name: 'Research Agent', description: 'Summarizes and analyzes your notes', icon: 'search', active: true },
+  { id: 'assistant', name: 'General Assistant', description: 'Helps with notes, tasks, and brainstorming', model: 'gpt-4o', skillIds: [], roleIds: [], icon: 'bot', active: true },
+  { id: 'researcher', name: 'Research Agent', description: 'Summarizes and analyzes your notes', model: 'gpt-4o', skillIds: [], roleIds: [], icon: 'search', active: true },
 ];
 
 const DEFAULT_SESSIONS: AgentSession[] = [
@@ -102,11 +102,14 @@ interface AppStore {
   skills: AgentSkill[];
   roles: AgentRole[];
   agentSessions: AgentSession[];
-  addAgent: (name: string, description: string) => void;
+  addAgent: (name: string, description: string, model?: string, skillIds?: string[], roleIds?: string[]) => void;
+  updateAgent: (id: string, updates: Partial<AgentConfig>) => void;
   toggleAgent: (id: string) => void;
   removeAgent: (id: string) => void;
   addSkill: (name: string, description: string) => void;
+  removeSkill: (id: string) => void;
   addRole: (name: string, description: string) => void;
+  removeRole: (id: string) => void;
   addAgentSession: () => AgentSession;
   removeAgentSession: (id: string) => void;
   addMessageToSession: (sessionId: string, msg: AgentMessage) => void;
@@ -332,9 +335,14 @@ export const useStore = create<AppStore>()(
       roles: [],
       agentSessions: DEFAULT_SESSIONS,
 
-      addAgent: (name, description) =>
+      addAgent: (name, description, model = 'gpt-4o', skillIds = [], roleIds = []) =>
         set((s) => ({
-          agents: [...s.agents, { id: createId(), name, description, icon: 'bot', active: true }],
+          agents: [...s.agents, { id: createId(), name, description, model, skillIds, roleIds, icon: 'bot', active: true }],
+        })),
+
+      updateAgent: (id, updates) =>
+        set((s) => ({
+          agents: s.agents.map((a) => (a.id === id ? { ...a, ...updates } : a)),
         })),
 
       toggleAgent: (id) =>
@@ -348,8 +356,14 @@ export const useStore = create<AppStore>()(
       addSkill: (name, description) =>
         set((s) => ({ skills: [...s.skills, { id: createId(), name, description }] })),
 
+      removeSkill: (id) =>
+        set((s) => ({ skills: s.skills.filter((sk) => sk.id !== id) })),
+
       addRole: (name, description) =>
         set((s) => ({ roles: [...s.roles, { id: createId(), name, description }] })),
+
+      removeRole: (id) =>
+        set((s) => ({ roles: s.roles.filter((r) => r.id !== id) })),
 
       addAgentSession: () => {
         const session: AgentSession = {

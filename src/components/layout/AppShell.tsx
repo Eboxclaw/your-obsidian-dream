@@ -67,7 +67,7 @@ export function AppShell() {
           <img
             src={logoSvg}
             alt="ViBo"
-            className="h-6 w-6 logo-glow ghost-float"
+            className="h-7 w-7 dark:drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]"
           />
           <span className="text-sm font-semibold tracking-tight text-foreground">
             {viewTitle}
