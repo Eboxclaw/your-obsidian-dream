@@ -39,11 +39,7 @@ export function GraphView() {
     const graphLinks: GraphLink[] = [];
 
     notes.forEach((note) => {
-      nodeMap.set(note.id, {
-        id: note.id,
-        title: note.title,
-        linkCount: 0,
-      });
+      nodeMap.set(note.id, { id: note.id, title: note.title, linkCount: 0 });
     });
 
     notes.forEach((note) => {
@@ -51,9 +47,7 @@ export function GraphView() {
       let match;
       while ((match = regex.exec(note.content)) !== null) {
         const targetTitle = match[1];
-        const targetNote = notes.find(
-          (n) => n.title.toLowerCase() === targetTitle.toLowerCase()
-        );
+        const targetNote = notes.find((n) => n.title.toLowerCase() === targetTitle.toLowerCase());
         if (targetNote && targetNote.id !== note.id) {
           graphLinks.push({ source: note.id, target: targetNote.id });
           const srcNode = nodeMap.get(note.id);
@@ -100,10 +94,10 @@ export function GraphView() {
     sim.on('tick', draw);
     simRef.current = sim;
 
-    return () => {
-      sim.stop();
-    };
+    return () => { sim.stop(); };
   }, [nodes, links, dimensions]);
+
+  const isDark = () => document.documentElement.classList.contains('dark');
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -116,14 +110,15 @@ export function GraphView() {
     canvas.width = width * dpr;
     canvas.height = height * dpr;
     ctx.scale(dpr, dpr);
-
     ctx.clearRect(0, 0, width, height);
     ctx.save();
     ctx.translate(transform.x, transform.y);
     ctx.scale(transform.k, transform.k);
 
+    const dark = isDark();
+
     // Draw links
-    ctx.strokeStyle = 'hsl(240, 5%, 20%)';
+    ctx.strokeStyle = dark ? 'hsl(0, 0%, 20%)' : 'hsl(270, 8%, 80%)';
     ctx.lineWidth = 0.5;
     linksRef.current.forEach((link) => {
       const source = link.source as GraphNode;
@@ -141,25 +136,26 @@ export function GraphView() {
       const radius = Math.max(3, Math.min(8, 3 + node.linkCount * 1.5));
       const isHovered = hoveredNode?.id === node.id;
 
-      // Glow for hovered
       if (isHovered) {
-        ctx.shadowColor = 'hsl(210, 100%, 50%)';
+        ctx.shadowColor = 'hsl(270, 50%, 65%)';
         ctx.shadowBlur = 12;
       }
 
       ctx.beginPath();
       ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
       ctx.fillStyle = isHovered
-        ? 'hsl(210, 100%, 60%)'
+        ? 'hsl(270, 50%, 65%)'
         : node.linkCount > 0
-        ? 'hsl(210, 100%, 50%)'
-        : 'hsl(240, 5%, 35%)';
+        ? (dark ? 'hsl(0, 0%, 70%)' : 'hsl(270, 15%, 40%)')
+        : (dark ? 'hsl(0, 0%, 35%)' : 'hsl(270, 8%, 65%)');
       ctx.fill();
       ctx.shadowBlur = 0;
 
       // Label
       if (isHovered || transform.k > 0.8) {
-        ctx.fillStyle = isHovered ? 'hsl(240, 5%, 95%)' : 'hsl(240, 5%, 55%)';
+        ctx.fillStyle = isHovered
+          ? (dark ? 'hsl(0, 0%, 95%)' : 'hsl(270, 15%, 15%)')
+          : (dark ? 'hsl(0, 0%, 55%)' : 'hsl(270, 8%, 50%)');
         ctx.font = `${isHovered ? '11' : '9'}px Inter, sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText(node.title, node.x, node.y + radius + 12);
@@ -169,12 +165,8 @@ export function GraphView() {
     ctx.restore();
   }, [dimensions, transform, hoveredNode]);
 
-  // Redraw on transform/hover change
-  useEffect(() => {
-    draw();
-  }, [draw]);
+  useEffect(() => { draw(); }, [draw]);
 
-  // Mouse interactions
   const getNodeAt = useCallback(
     (cx: number, cy: number): GraphNode | null => {
       const x = (cx - transform.x) / transform.k;
@@ -195,7 +187,6 @@ export function GraphView() {
       if (!rect) return;
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
-
       if (dragRef.current) {
         const node = dragRef.current.node;
         node.fx = (cx - transform.x) / transform.k;
@@ -203,12 +194,9 @@ export function GraphView() {
         simRef.current?.alpha(0.3).restart();
         return;
       }
-
       const node = getNodeAt(cx, cy);
       setHoveredNode(node);
-      if (canvasRef.current) {
-        canvasRef.current.style.cursor = node ? 'pointer' : 'grab';
-      }
+      if (canvasRef.current) canvasRef.current.style.cursor = node ? 'pointer' : 'grab';
     },
     [getNodeAt, transform]
   );
@@ -242,36 +230,63 @@ export function GraphView() {
       const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
       const node = getNodeAt(e.clientX - rect.left, e.clientY - rect.top);
-      if (node) {
-        setActiveNote(node.id);
-        setView('notebook');
-      }
+      if (node) { setActiveNote(node.id); setView('notebook'); }
     },
     [getNodeAt, setActiveNote, setView]
   );
 
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-      const scaleFactor = e.deltaY > 0 ? 0.95 : 1.05;
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const scaleFactor = e.deltaY > 0 ? 0.95 : 1.05;
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    setTransform((t) => ({
+      k: Math.max(0.2, Math.min(3, t.k * scaleFactor)),
+      x: mx - (mx - t.x) * scaleFactor,
+      y: my - (my - t.y) * scaleFactor,
+    }));
+  }, []);
+
+  // Touch support
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!dragRef.current || !e.touches[0]) return;
       const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      setTransform((t) => ({
-        k: Math.max(0.2, Math.min(3, t.k * scaleFactor)),
-        x: mx - (mx - t.x) * scaleFactor,
-        y: my - (my - t.y) * scaleFactor,
-      }));
+      const cx = e.touches[0].clientX - rect.left;
+      const cy = e.touches[0].clientY - rect.top;
+      const node = dragRef.current.node;
+      node.fx = (cx - transform.x) / transform.k;
+      node.fy = (cy - transform.y) / transform.k;
+      simRef.current?.alpha(0.3).restart();
     },
-    []
+    [transform]
+  );
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!e.touches[0]) return;
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const cx = e.touches[0].clientX - rect.left;
+      const cy = e.touches[0].clientY - rect.top;
+      const node = getNodeAt(cx, cy);
+      if (node) {
+        dragRef.current = { node, offsetX: cx, offsetY: cy };
+        node.fx = node.x;
+        node.fy = node.y;
+      }
+    },
+    [getNodeAt]
   );
 
   return (
     <div ref={containerRef} className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b px-6 py-3">
+      <div className="flex items-center justify-between border-b px-4 sm:px-6 py-3">
         <h1 className="text-sm font-semibold tracking-tight text-foreground">
-          Graph View
+          Knowledge Graph
         </h1>
         <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
           {nodes.length} nodes · {links.length} edges
@@ -281,13 +296,16 @@ export function GraphView() {
         <canvas
           ref={canvasRef}
           style={{ width: dimensions.width, height: dimensions.height - 44 }}
-          className="block"
+          className="block touch-none"
           onMouseMove={handleMouseMove}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onDoubleClick={handleDoubleClick}
           onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleMouseUp}
         />
         {hoveredNode && (
           <div className="pointer-events-none absolute left-4 bottom-4 rounded-md border bg-popover px-3 py-2">
