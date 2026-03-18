@@ -29,8 +29,8 @@ export function InlineAgent() {
   const session = agentSessions.find((s) => s.id === ui.activeAgentSessionId) || agentSessions[0];
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [session?.messages.length]);
+    if (scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [session && session.messages.length]);
 
   // Auto-focus input when agent opens, and apply pending action
   useEffect(() => {
