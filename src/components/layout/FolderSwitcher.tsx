@@ -9,7 +9,7 @@ export function FolderSwitcher() {
   const [newName, setNewName] = useState('');
 
   const activeFolder = folders.find((f) => f.id === ui.activeFolderId);
-  const label = activeFolder?.name || 'All Folders';
+  const label = activeFolder ? activeFolder.name : 'All Folders';
 
   const handleCreate = () => {
     if (newName.trim()) {
