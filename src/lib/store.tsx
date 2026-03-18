@@ -224,15 +224,8 @@ export const useStore = create<AppStore>()(
     // -----------------------------------------------------------------
     notes: [WELCOME_NOTE],
 
-    addNote: async (title, parentId = null, isPrivate = false) => {
+    addNote: (title, parentId = null, isPrivate = false) => {
       const activeFolderId = get().ui.activeFolderId;
-      const result = await tc.noteCreate(title, '', activeFolderId);
-      if (result) {
-        const note = { ...result, parentId: parentId || null, isPrivate };
-        set((s) => ({ notes: [...s.notes, note] }));
-        return note;
-      }
-      // Fallback for web preview
       const note: Note = {
         id: createId(),
         title,
@@ -246,6 +239,8 @@ export const useStore = create<AppStore>()(
         folderId: activeFolderId,
       };
       set((s) => ({ notes: [...s.notes, note] }));
+      // Fire-and-forget to backend
+      tc.noteCreate(title, '', activeFolderId);
       return note;
     },
 
