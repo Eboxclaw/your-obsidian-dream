@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
+import { keystoreSet } from '@/lib/crypto';
+import { boardDelete, cardDelete, noteDelete } from '@/lib/tauriClient';
 import {
   Sun,
   Moon,
@@ -25,6 +27,7 @@ export function SettingsView() {
   const [ollamaKey, setOllamaKey] = useState('');
   const [ollamaModel, setOllamaModel] = useState('llama3');
   const [models, setModels] = useState(MODELS);
+  const [saveStatus, setSaveStatus] = useState('');
 
   const handleToggleTheme = () => {
     const next = !darkMode;
@@ -46,9 +49,30 @@ export function SettingsView() {
     }
   };
 
-  const handleReset = () => {
-    localStorage.removeItem('vibo-store');
-    window.location.reload();
+  const handleReset = async () => {
+    try {
+      for (const note of notes) {
+        await noteDelete(note.id);
+      }
+      for (const board of boards) {
+        await boardDelete(board.id);
+      }
+      for (const card of cards) {
+        await cardDelete(card.id);
+      }
+      window.location.reload();
+    } catch (_error) {
+      setSaveStatus('Reset failed. Try again.');
+    }
+  };
+
+  const handleSaveProviderKey = async () => {
+    try {
+      const ok = await keystoreSet('ollama_api_key', ollamaKey);
+      setSaveStatus(ok ? 'Provider key saved in vault.' : 'Could not save provider key.');
+    } catch (_error) {
+      setSaveStatus('Could not save provider key.');
+    }
   };
 
   const toggleModelActive = (id: string) => {
@@ -183,6 +207,13 @@ export function SettingsView() {
           <option value="phi3">Phi-3</option>
           <option value="gemma">Gemma</option>
         </select>
+        <button
+          onClick={handleSaveProviderKey}
+          className="w-full rounded-lg border px-3 py-2 text-xs text-foreground hover:bg-muted aether-transition"
+        >
+          Save Provider Key
+        </button>
+        {saveStatus && <p className="text-[10px] text-muted-foreground">{saveStatus}</p>}
       </section>
 
       {/* Vault Stats */}
@@ -205,7 +236,7 @@ export function SettingsView() {
           </div>
           <div className="flex justify-between text-muted-foreground">
             <span>Storage</span>
-            <span className="font-mono text-foreground">localStorage</span>
+            <span className="font-mono text-foreground">Vault</span>
           </div>
         </div>
       </section>
