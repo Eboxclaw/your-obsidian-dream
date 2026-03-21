@@ -15,51 +15,60 @@ export function TemplatesView() {
   const [editorContent, setEditorContent] = useState('');
   const [editorTags, setEditorTags] = useState('');
 
-  const handleUseNoteTemplate = (template: NoteTemplate) => {
-    const note = addNote(template.title);
+  const handleUseNoteTemplate = async (template: NoteTemplate) => {
+    const note = await addNote(template.title);
+    if (!note) return;
     const store = useStore.getState();
-    store.updateNote(note.id, { content: template.content, tags: template.tags });
+    await store.updateNote(note.id, { content: template.content, tags: template.tags });
     setActiveNote(note.id);
     setView('notebook');
   };
 
-  const handleUseKanbanTemplate = (template: KanbanTemplate) => {
-    const board = addBoard(template.title);
+  const handleUseKanbanTemplate = async (template: KanbanTemplate) => {
+    const board = await addBoard(template.title);
+    if (!board) return;
     const store = useStore.getState();
     board.columns.forEach((col) => store.deleteColumn(board.id, col.id));
-    template.columns.forEach((col) => {
+    for (const col of template.columns) {
       store.addColumn(board.id, col.title);
       const updatedBoard = store.boards.find((b) => b.id === board.id);
       const newCol = updatedBoard && updatedBoard.columns.find((c) => c.title === col.title);
-      if (newCol) col.cards.forEach((cardTitle) => store.addCard(board.id, newCol.id, cardTitle));
-    });
+      if (newCol) {
+        for (const cardTitle of col.cards) {
+          await store.addCard(board.id, newCol.id, cardTitle);
+        }
+      }
+    }
     store.setActiveBoard(board.id);
     setView('kanban');
   };
 
-  const handleUseTaskTemplate = (template: TaskTemplate) => {
+  const handleUseTaskTemplate = async (template: TaskTemplate) => {
     const board = boards[0];
     if (!board || !board.columns[0]) return;
-    const card = addCard(board.id, board.columns[0].id, template.title);
+    const card = await addCard(board.id, board.columns[0].id, template.title);
+    if (!card) return;
     const store = useStore.getState();
-    store.updateCard(card.id, {
+    await store.updateCard(card.id, {
       description: template.description,
       subtasks: template.subtasks.map((text) => ({ id: crypto.randomUUID(), text, done: false })),
     });
     setView('kanban');
   };
 
-  const handleUseCustomTemplate = (ct: typeof customTemplates[0]) => {
+  const handleUseCustomTemplate = async (ct: typeof customTemplates[0]) => {
     if (ct.type === 'note') {
-      const note = addNote(ct.title);
-      useStore.getState().updateNote(note.id, { content: ct.content, tags: ct.tags });
+      const note = await addNote(ct.title);
+      if (!note) return;
+      await useStore.getState().updateNote(note.id, { content: ct.content, tags: ct.tags });
       setActiveNote(note.id);
       setView('notebook');
     } else {
       const board = boards[0];
       if (!board || !board.columns[0]) return;
-      const card = addCard(board.id, board.columns[0].id, ct.title);
-      useStore.getState().updateCard(card.id, { description: ct.content });
+      const card = await addCard(board.id, board.columns[0].id, ct.title);
+      if (!card) return;
+      await useStore.getState().updateCard(card.id, { description: ct.content });
       setView('kanban');
     }
   };

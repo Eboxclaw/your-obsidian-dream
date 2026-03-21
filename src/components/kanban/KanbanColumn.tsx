@@ -26,9 +26,9 @@ export function KanbanColumnComponent({ column, boardId, cards }: Props) {
     .map((id) => cards.find((c) => c.id === id))
     .filter(Boolean) as KanbanCard[];
 
-  const handleAddCard = () => {
+  const handleAddCard = async () => {
     if (newCardTitle.trim()) {
-      addCard(boardId, column.id, newCardTitle.trim());
+      await addCard(boardId, column.id, newCardTitle.trim());
       setNewCardTitle('');
       setShowNewCard(false);
     }

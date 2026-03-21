@@ -63,7 +63,7 @@ export function KanbanView() {
     }
 
     if (card.columnId !== targetColId || true) {
-      moveCard(cardId, card.columnId, targetColId, targetIndex);
+      void moveCard(cardId, card.columnId, targetColId, targetIndex);
     }
   };
 
@@ -75,9 +75,9 @@ export function KanbanView() {
     }
   };
 
-  const handleNewTask = () => {
+  const handleNewTask = async () => {
     if (board.columns[0]) {
-      addCard(board.id, board.columns[0].id, 'New Task');
+      await addCard(board.id, board.columns[0].id, 'New Task');
     }
   };
 

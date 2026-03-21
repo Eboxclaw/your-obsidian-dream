@@ -53,7 +53,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
     },
     onUpdate: ({ editor }) => {
       const content = editor.getHTML();
-      updateNote(note.id, { content });
+      void updateNote(note.id, { content });
 
       // Check for wikilink typing
       if (showWikiSearch) {
@@ -88,7 +88,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
-    updateNote(note.id, { title: e.target.value });
+    void updateNote(note.id, { title: e.target.value });
   };
 
   const handleTitleKeyDown = (e: React.KeyboardEvent) => {
