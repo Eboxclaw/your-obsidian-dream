@@ -23,12 +23,12 @@ export function FABMenu() {
   const [step, setStep] = useState<Step>('menu');
   const [newFolderName, setNewFolderName] = useState('');
 
-  const handleCreate = (type: string) => {
+  const handleCreate = async (type: string) => {
     if (type === 'note') { setStep('template'); return; }
     if (type === 'task') {
       const board = boards[0];
       if (board && board.columns[0]) {
-        addCard(board.id, board.columns[0].id, 'New Task');
+        await addCard(board.id, board.columns[0].id, 'New Task');
         setView('kanban');
       }
       handleClose();
@@ -36,27 +36,33 @@ export function FABMenu() {
     }
     if (type === 'folder') { setStep('folder'); return; }
     if (type === 'secret') {
-      const note = addNote('Private Note', null, true);
-      setActiveNote(note.id);
-      setView('notebook');
+      const note = await addNote('Private Note', null, true);
+      if (note) {
+        setActiveNote(note.id);
+        setView('notebook');
+      }
       handleClose();
       return;
     }
   };
 
-  const handleTemplate = (template: typeof NOTE_TEMPLATES[0]) => {
-    const note = addNote(template.label === 'Blank' ? 'Untitled' : template.label);
-    setActiveNote(note.id);
-    setView('notebook');
+  const handleTemplate = async (template: typeof NOTE_TEMPLATES[0]) => {
+    const note = await addNote(template.label === 'Blank' ? 'Untitled' : template.label);
+    if (note) {
+      setActiveNote(note.id);
+      setView('notebook');
+    }
     handleClose();
   };
 
-  const handleCreateFolder = () => {
+  const handleCreateFolder = async () => {
     if (newFolderName.trim()) {
-      const folder = addFolder(newFolderName.trim());
-      setActiveFolder(folder.id);
-      setNewFolderName('');
-      handleClose();
+      const folder = await addFolder(newFolderName.trim());
+      if (folder) {
+        setActiveFolder(folder.id);
+        setNewFolderName('');
+        handleClose();
+      }
     }
   };
 

@@ -31,9 +31,13 @@ export function AppShell() {
       }
       if (mod && e.key === 'n') {
         e.preventDefault();
-        const note = addNote('Untitled');
-        setActiveNote(note.id);
-        setView('notebook');
+        void (async () => {
+          const note = await addNote('Untitled');
+          if (note) {
+            setActiveNote(note.id);
+            setView('notebook');
+          }
+        })();
       }
     },
     [toggleCommandPalette, addNote, setActiveNote, setView]

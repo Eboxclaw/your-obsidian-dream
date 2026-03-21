@@ -11,13 +11,15 @@ export function FolderSwitcher() {
   const activeFolder = folders.find((f) => f.id === ui.activeFolderId);
   const label = activeFolder ? activeFolder.name : 'All Folders';
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (newName.trim()) {
-      const folder = addFolder(newName.trim());
-      setActiveFolder(folder.id);
-      setNewName('');
-      setCreating(false);
-      setOpen(false);
+      const folder = await addFolder(newName.trim());
+      if (folder) {
+        setActiveFolder(folder.id);
+        setNewName('');
+        setCreating(false);
+        setOpen(false);
+      }
     }
   };
 

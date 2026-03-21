@@ -25,7 +25,7 @@ export function KanbanCardComponent({ card }: Props) {
   };
 
   const toggleSubtask = (subtaskId: string) => {
-    updateCard(card.id, {
+    void updateCard(card.id, {
       subtasks: card.subtasks.map((st) =>
         st.id === subtaskId ? { ...st, done: !st.done } : st
       ),
@@ -88,7 +88,7 @@ export function KanbanCardComponent({ card }: Props) {
           )}
         </div>
         <button
-          onClick={() => deleteCard(card.id)}
+          onClick={() => { void deleteCard(card.id); }}
           className="mt-0.5 shrink-0 text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 aether-transition"
         >
           <Trash2 className="h-3 w-3" />
