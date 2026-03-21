@@ -24,3 +24,7 @@ This avoids Wrangler auto-setup in CI (which previously tried `npm` and failed w
 Configured worker name: `beta-vibo`.
 
 If you want the deployment URL to stay as `your-obsidian-dream.crisstiano.workers.dev`, change `name` in `wrangler.jsonc` back to `your-obsidian-dream`.
+
+## CODEX file map
+
+For CODEX-to-repository component name/path mappings, see `docs/FILE_MAP.md`.
