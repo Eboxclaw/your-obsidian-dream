@@ -18,7 +18,7 @@ const MODELS = [
 ];
 
 export function SettingsView() {
-  const { notes, boards, cards } = useStore();
+  const { notes, boards, cards, resetAllData } = useStore();
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [biometrics, setBiometrics] = useState(true); // Default ON
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -46,9 +46,11 @@ export function SettingsView() {
     }
   };
 
-  const handleReset = () => {
-    localStorage.removeItem('vibo-store');
-    window.location.reload();
+  const handleReset = async () => {
+    const ok = await resetAllData();
+    if (ok) {
+      setShowResetConfirm(false);
+    }
   };
 
   const toggleModelActive = (id: string) => {
@@ -205,7 +207,7 @@ export function SettingsView() {
           </div>
           <div className="flex justify-between text-muted-foreground">
             <span>Storage</span>
-            <span className="font-mono text-foreground">localStorage</span>
+            <span className="font-mono text-foreground">backend vault</span>
           </div>
         </div>
       </section>

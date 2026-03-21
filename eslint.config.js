@@ -23,4 +23,20 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    files: ["**/*.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ChainExpression",
+          message: "Optional chaining (?.) is not allowed in TSX files. Use explicit && checks.",
+        },
+        {
+          selector: "LogicalExpression[operator='??']",
+          message: "Nullish coalescing (??) is not allowed in TSX files. Use an explicit null/undefined ternary.",
+        },
+      ],
+    },
+  },
 );
