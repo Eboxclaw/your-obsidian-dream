@@ -3,8 +3,6 @@
 // Rust is the security gatekeeper. All business logic lives here.
 // Kotlin (Koog/EmbeddingPlugin) communicates via event bus.
 
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 mod notes;
 mod kanban;
 mod storage;
@@ -22,7 +20,7 @@ use vault::VaultState;
 use event_system::EventSystem;
 use scheduler::Scheduler;
 
-fn main() {
+pub fn run() {
     tauri::Builder::default()
         // ── Official plugins ──────────────────────────────────────────
         .plugin(tauri_plugin_leap_ai::init())
