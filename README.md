@@ -24,3 +24,15 @@ This avoids Wrangler auto-setup in CI (which previously tried `npm` and failed w
 Configured worker name: `beta-vibo`.
 
 If you want the deployment URL to stay as `your-obsidian-dream.crisstiano.workers.dev`, change `name` in `wrangler.jsonc` back to `your-obsidian-dream`.
+
+## Component checklist
+
+Use this quick checklist before merging UI changes:
+
+- No `fetch()` / `axios`, no `localStorage` / `sessionStorage`.
+- Vault-protected views must gate with `vaultStatus.unlocked` and render `LockScreen` fallback.
+- Provider keys flow through `keystoreGet` / `keystoreSet` only.
+- Chat is a bottom `Sheet` component, never a route.
+- Streaming listeners come from `src/lib/lfm.ts` and always unlisten on unmount.
+- Navigation uses store `navigate()` (not links/hrefs).
+- Component-side command calls use typed wrappers (`tauriClient`, `leapClient`, `crypto`, `lfm`).

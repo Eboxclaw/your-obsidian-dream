@@ -16,6 +16,7 @@ import type {
   CustomTemplate,
 } from '@/lib/types';
 import * as tc from '@/lib/tauriClient';
+import * as cryptoClient from '@/lib/crypto';
 
 const createId = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
@@ -150,6 +151,7 @@ interface AppStore {
   // UI
   ui: UIState;
   setView: (view: ViewMode) => void;
+  navigate: (view: ViewMode) => void;
   setActiveNote: (id: string | null) => void;
   setActiveBoard: (id: string | null) => void;
   setActiveFolder: (id: string | null) => void;
@@ -160,6 +162,13 @@ interface AppStore {
   toggleInlineAgent: () => void;
   setActiveAgentSession: (id: string | null) => void;
   setNotesTab: (tab: 'all' | 'private') => void;
+
+  // Vault
+  vaultStatus: { initialized: boolean; unlocked: boolean; biometricAvailable: boolean };
+  refreshVaultStatus: () => Promise<void>;
+  unlockWithPin: (pin: string) => Promise<boolean>;
+  unlockWithBiometric: () => Promise<boolean>;
+  lockVault: () => Promise<boolean>;
 
   // Onboarding
   onboarding: OnboardingState;
@@ -175,12 +184,13 @@ export const useStore = create<AppStore>()(
     hydrated: false,
 
     hydrate: async () => {
-      const [notes, folders, boards, agents, sessions] = await Promise.all([
+      const [notes, folders, boards, agents, sessions, vaultStatus] = await Promise.all([
         tc.noteList(),
         tc.folderList(),
         tc.boardList(),
         tc.agentList(),
         tc.sessionList(),
+        cryptoClient.vaultGetStatus(),
       ]);
 
       set({
@@ -190,6 +200,7 @@ export const useStore = create<AppStore>()(
         boards: boards && boards.length > 0 ? boards : [DEFAULT_BOARD],
         agents: agents && agents.length > 0 ? agents : DEFAULT_AGENTS,
         agentSessions: sessions && sessions.length > 0 ? sessions : DEFAULT_SESSIONS,
+        vaultStatus: vaultStatus !== null ? vaultStatus : { initialized: false, unlocked: false, biometricAvailable: false },
       });
     },
 
@@ -523,6 +534,7 @@ export const useStore = create<AppStore>()(
     },
 
     setView: (view) => set((s) => ({ ui: { ...s.ui, activeView: view } })),
+    navigate: (view) => set((s) => ({ ui: { ...s.ui, activeView: view } })),
     setActiveNote: (id) => set((s) => ({ ui: { ...s.ui, activeNoteId: id } })),
     setActiveBoard: (id) => set((s) => ({ ui: { ...s.ui, activeBoardId: id } })),
     setActiveFolder: (id) => set((s) => ({ ui: { ...s.ui, activeFolderId: id } })),
@@ -533,6 +545,45 @@ export const useStore = create<AppStore>()(
     toggleInlineAgent: () => set((s) => ({ ui: { ...s.ui, inlineAgentOpen: !s.ui.inlineAgentOpen } })),
     setActiveAgentSession: (id) => set((s) => ({ ui: { ...s.ui, activeAgentSessionId: id } })),
     setNotesTab: (tab) => set((s) => ({ ui: { ...s.ui, notesTab: tab } })),
+
+    // -----------------------------------------------------------------
+    // Vault
+    // -----------------------------------------------------------------
+    vaultStatus: { initialized: false, unlocked: false, biometricAvailable: false },
+
+    refreshVaultStatus: async () => {
+      const status = await cryptoClient.vaultGetStatus();
+      if (status !== null) {
+        set(() => ({ vaultStatus: status }));
+      }
+    },
+
+    unlockWithPin: async (pin) => {
+      const ok = await cryptoClient.vaultUnlock(pin);
+      const status = await cryptoClient.vaultGetStatus();
+      if (status !== null) {
+        set(() => ({ vaultStatus: status }));
+      }
+      return ok;
+    },
+
+    unlockWithBiometric: async () => {
+      const ok = await cryptoClient.biometricUnlock();
+      const status = await cryptoClient.vaultGetStatus();
+      if (status !== null) {
+        set(() => ({ vaultStatus: status }));
+      }
+      return ok;
+    },
+
+    lockVault: async () => {
+      const ok = await cryptoClient.vaultLock();
+      const status = await cryptoClient.vaultGetStatus();
+      if (status !== null) {
+        set(() => ({ vaultStatus: status }));
+      }
+      return ok;
+    },
 
     // -----------------------------------------------------------------
     // Onboarding

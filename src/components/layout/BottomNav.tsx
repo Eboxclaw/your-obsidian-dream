@@ -11,7 +11,7 @@ const items: { view: ViewMode; label: string; icon: typeof Home }[] = [
 ];
 
 export function BottomNav() {
-  const { ui, setView } = useStore();
+  const { ui, navigate } = useStore();
 
   return (
     <nav className="flex h-14 shrink-0 items-end justify-around border-t bg-card px-2 pb-1">
@@ -20,7 +20,7 @@ export function BottomNav() {
         return (
           <button
             key={view}
-            onClick={() => setView(view)}
+            onClick={() => navigate(view)}
             className={`flex flex-col items-center gap-0.5 rounded-lg px-4 py-1.5 aether-transition ${
               active
                 ? 'text-foreground'

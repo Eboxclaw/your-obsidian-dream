@@ -214,3 +214,11 @@ export async function cancelGeneration(sessionId: string): Promise<boolean> {
   const { invoke } = await import('@tauri-apps/api/core');
   return invoke<boolean>('llm_cancel', { sessionId });
 }
+
+export async function useStream(callbacks: LLMStreamCallbacks): Promise<UnlistenFn> {
+  return subscribeLocalStream(callbacks);
+}
+
+export async function listenToProviderStream(callbacks: LLMStreamCallbacks): Promise<UnlistenFn> {
+  return subscribeLLMStream(callbacks);
+}
