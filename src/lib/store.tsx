@@ -165,6 +165,7 @@ interface AppStore {
   onboarding: OnboardingState;
   setOnboarding: (data: Partial<OnboardingState>) => void;
   completeOnboarding: () => void;
+  resetAllData: () => Promise<boolean>;
 }
 
 export const useStore = create<AppStore>()(
@@ -556,5 +557,32 @@ export const useStore = create<AppStore>()(
       set((s) => ({
         onboarding: { ...s.onboarding, completed: true },
       })),
+
+    resetAllData: async () => {
+      const resetOk = await tc.storageResetAll();
+      if (!resetOk) {
+        return false;
+      }
+
+      set((s) => ({
+        notes: [WELCOME_NOTE],
+        folders: [DEFAULT_FOLDER],
+        boards: [DEFAULT_BOARD],
+        cards: DEFAULT_CARDS,
+        agents: DEFAULT_AGENTS,
+        agentSessions: DEFAULT_SESSIONS,
+        customTemplates: [],
+        ui: {
+          ...s.ui,
+          activeView: 'dashboard',
+          activeNoteId: null,
+          activeBoardId: 'default-board',
+          activeFolderId: null,
+          activeAgentSessionId: 'session-1',
+        },
+      }));
+
+      return true;
+    },
   })
 );
