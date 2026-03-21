@@ -140,3 +140,15 @@ export async function agentRun(sessionId: string, prompt: string): Promise<boole
 export async function agentStop(sessionId: string): Promise<boolean | null> {
   return pluginInvoke<boolean>('agent_stop', { sessionId });
 }
+
+export async function agentProcess(input: string): Promise<boolean | null> {
+  return pluginInvoke<boolean>('agent_process', { input });
+}
+
+export async function agentMemorySet(sessionId: string, content: string): Promise<boolean | null> {
+  return pluginInvoke<boolean>('agent_memory_set', { sessionId, content });
+}
+
+export async function agentMemoryGet(sessionId: string): Promise<string | null> {
+  return pluginInvoke<string>('agent_memory_get', { sessionId });
+}

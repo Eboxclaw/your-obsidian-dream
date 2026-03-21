@@ -22,6 +22,9 @@ import {
 } from 'lucide-react';
 import logoSvg from '@/assets/logo.svg';
 import { SmokeParticles } from '@/components/effects/SmokeParticles';
+import { keystoreSet, vaultInit } from '@/lib/crypto';
+import { oauthStart } from '@/lib/tauriClient';
+import { agentMemorySet, downloadModel } from '@/lib/leapClient';
 
 type SecurityMethod = 'biometrics' | 'pin' | 'passphrase';
 type AgentPreset = 'manager' | 'assistant' | 'code' | 'writer';
@@ -67,6 +70,8 @@ export function OnboardingWizard() {
   const [subStep, setSubStep] = useState<SubStep | null>(null);
   const [pinError, setPinError] = useState('');
   const [biometricDone, setBiometricDone] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [setupError, setSetupError] = useState('');
 
   const totalSteps = 5;
 
@@ -79,15 +84,36 @@ export function OnboardingWizard() {
     return true;
   };
 
-  const finishOnboarding = () => {
-    setOnboarding({
-      name,
-      role: 'general' as UserRole,
-      workspaceName: 'My Vault',
-      theme: 'dark',
-      features: ['wikilinks', 'kanban', 'graph', 'ai'],
-    });
-    completeOnboarding();
+  const finishOnboarding = async () => {
+    setIsSubmitting(true);
+    setSetupError('');
+
+    try {
+      // Step wiring invariant:
+      // 1) model select -> selectedModel local state
+      // 2) provider key -> keystoreSet
+      // 3) oauth start -> oauthStart
+      // 4) vault init -> vaultInit
+      // 5) memory/model setup -> agentMemorySet + downloadModel
+      await keystoreSet('provider.default.api_key', 'pending-from-settings');
+      await oauthStart('google');
+      await vaultInit(pin);
+      await agentMemorySet('onboarding', 'role=general;workspace=My Vault');
+      await downloadModel(selectedModel);
+
+      setOnboarding({
+        name,
+        role: 'general' as UserRole,
+        workspaceName: 'My Vault',
+        theme: 'dark',
+        features: ['wikilinks', 'kanban', 'graph', 'ai'],
+      });
+      completeOnboarding();
+    } catch (err) {
+      setSetupError(err instanceof Error ? err.message : 'Onboarding setup failed.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleNext = () => {
@@ -117,7 +143,7 @@ export function OnboardingWizard() {
       if (security === 'biometrics') {
         setSubStep('biometric');
       } else {
-        finishOnboarding();
+        void finishOnboarding();
       }
     }
   };
@@ -201,13 +227,13 @@ export function OnboardingWizard() {
             <button
               onClick={handleBiometricAuth}
               className="mt-6 w-full rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
-            >
-              Simulate Biometric
+>
+              {isSubmitting ? 'Configuring...' : 'Simulate Biometric'}
             </button>
           )}
           {!biometricDone && (
             <button
-              onClick={finishOnboarding}
+              onClick={() => { void finishOnboarding(); }}
               className="mt-3 w-full rounded-2xl border py-3 text-sm text-muted-foreground hover:text-foreground aether-transition"
             >
               Skip for now
@@ -238,6 +264,7 @@ export function OnboardingWizard() {
           {pinError && (
             <p className="mt-2 text-xs text-destructive">{pinError}</p>
           )}
+          {setupError ? <p className="mt-2 text-xs text-destructive">{setupError}</p> : null}
           <div className="mt-6 relative">
             <input
               type={showPin ? 'text' : 'password'}
