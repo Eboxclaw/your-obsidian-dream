@@ -342,6 +342,10 @@ export async function storageDistillationGet(key: string): Promise<string | null
   return safeInvoke<string>('storage_distillation_get', { key });
 }
 
+export async function storageResetAll(): Promise<boolean | null> {
+  return safeInvoke<boolean>('storage_reset_all');
+}
+
 // ---------------------------------------------------------------------------
 // Providers
 // ---------------------------------------------------------------------------

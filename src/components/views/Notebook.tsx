@@ -28,7 +28,7 @@ export function Notebook() {
           {activeNote.isPrivate && <Lock className="h-3 w-3 text-muted-foreground" />}
           <button
             onClick={() => {
-              deleteNote(activeNote.id);
+              void deleteNote(activeNote.id);
               setActiveNote(null);
             }}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive aether-transition"
@@ -51,9 +51,11 @@ export function Notebook() {
     .filter((n) => !search || n.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime());
 
-  const handleNewNote = () => {
-    const note = addNote(isPrivateTab ? 'Private Note' : 'Untitled', null, isPrivateTab);
-    setActiveNote(note.id);
+  const handleNewNote = async () => {
+    const note = await addNote(isPrivateTab ? 'Private Note' : 'Untitled', null, isPrivateTab);
+    if (note) {
+      setActiveNote(note.id);
+    }
   };
 
   // Biometric-first gate for private notes, PIN as fallback
@@ -223,7 +225,7 @@ export function Notebook() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    deleteNote(note.id);
+                    void deleteNote(note.id);
                   }}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 aether-transition shrink-0"
                 >

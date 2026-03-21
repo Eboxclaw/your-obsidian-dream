@@ -149,7 +149,7 @@ export function Dashboard() {
     const board = boards.find((b) => b.id === c.boardId);
     if (!board) return false;
     const doneCol = board.columns.find((col) => col.title.toLowerCase() === 'done');
-    return doneCol?.cardIds.includes(c.id);
+    return doneCol && doneCol.cardIds.includes(c.id);
   }).length;
   const pendingTasks = totalTasks - doneTasks;
   const activeAgents = agents.filter((a) => a.active).length;

@@ -20,53 +20,7 @@ import * as cryptoClient from '@/lib/crypto';
 
 const createId = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
-
-// ---------------------------------------------------------------------------
-// Stub data — used only when Tauri backend is not available (web preview)
-// ---------------------------------------------------------------------------
-
-const WELCOME_NOTE: Note = {
-  id: 'welcome',
-  title: 'Welcome to ViBo',
-  content: `# Welcome to ViBo\n\nYour second brain starts here. This is a **markdown-first** notebook with wikilinks, backlinks, and kanban boards.\n\n## Getting Started\n\n- Create notes with \`Cmd+N\`\n- Open command palette with \`Cmd+K\`\n- Link notes with \`[[wikilinks]]\`\n- Organize work on the Kanban board\n\n> "The mind is not a vessel to be filled, but a fire to be kindled."\n`,
-  tags: ['getting-started'],
-  created: now(),
-  modified: now(),
-  parentId: null,
-  isFolder: false,
-  isPrivate: false,
-  folderId: null,
-};
-
-const DEFAULT_BOARD: KanbanBoard = {
-  id: 'default-board',
-  title: 'Project Board',
-  columns: [
-    { id: 'col-todo', title: 'To Do', cardIds: ['card-1'] },
-    { id: 'col-progress', title: 'In Progress', cardIds: [] },
-    { id: 'col-done', title: 'Done', cardIds: [] },
-  ],
-  created: now(),
-  modified: now(),
-  folderId: null,
-};
-
-const DEFAULT_CARDS: KanbanCard[] = [
-  {
-    id: 'card-1',
-    title: 'Explore ViBo features',
-    description: 'Try creating notes, linking them, and using the kanban board.',
-    noteId: 'welcome',
-    subtasks: [
-      { id: 'st-1', text: 'Create a new note', done: false },
-      { id: 'st-2', text: 'Try wikilinks', done: false },
-      { id: 'st-3', text: 'Move a kanban card', done: false },
-    ],
-    columnId: 'col-todo',
-    boardId: 'default-board',
-    created: now(),
-  },
-];
+const DEV_BOOTSTRAP_MODE = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_BOOTSTRAP === 'true';
 
 const DEFAULT_AGENTS: AgentConfig[] = [
   { id: 'assistant', name: 'General Assistant', description: 'Helps with notes, tasks, and brainstorming', model: 'LFM2-350M-Extract', skillIds: [], roleIds: [], icon: 'bot', active: true },
@@ -83,12 +37,6 @@ const DEFAULT_SESSIONS: AgentSession[] = [
   },
 ];
 
-const DEFAULT_FOLDER: Folder = {
-  id: 'default-folder',
-  name: 'My Vault',
-  created: now(),
-  parentId: null,
-};
 
 // ---------------------------------------------------------------------------
 // Store interface
@@ -101,26 +49,26 @@ interface AppStore {
 
   // Folders
   folders: Folder[];
-  addFolder: (name: string, parentId?: string | null) => Folder;
-  renameFolder: (id: string, name: string) => void;
-  deleteFolder: (id: string) => void;
+  addFolder: (name: string, parentId?: string | null) => Promise<Folder | null>;
+  renameFolder: (id: string, name: string) => Promise<void>;
+  deleteFolder: (id: string) => Promise<void>;
 
   // Notes
   notes: Note[];
-  addNote: (title: string, parentId?: string | null, isPrivate?: boolean) => Note;
-  updateNote: (id: string, updates: Partial<Note>) => void;
-  deleteNote: (id: string) => void;
+  addNote: (title: string, parentId?: string | null, isPrivate?: boolean) => Promise<Note | null>;
+  updateNote: (id: string, updates: Partial<Note>) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
   getNoteById: (id: string) => Note | undefined;
   getNoteByTitle: (title: string) => Note | undefined;
 
   // Kanban
   boards: KanbanBoard[];
   cards: KanbanCard[];
-  addBoard: (title: string) => KanbanBoard;
-  addCard: (boardId: string, columnId: string, title: string) => KanbanCard;
-  updateCard: (id: string, updates: Partial<KanbanCard>) => void;
-  deleteCard: (id: string) => void;
-  moveCard: (cardId: string, fromColId: string, toColId: string, newIndex: number) => void;
+  addBoard: (title: string) => Promise<KanbanBoard | null>;
+  addCard: (boardId: string, columnId: string, title: string) => Promise<KanbanCard | null>;
+  updateCard: (id: string, updates: Partial<KanbanCard>) => Promise<void>;
+  deleteCard: (id: string) => Promise<void>;
+  moveCard: (cardId: string, fromColId: string, toColId: string, newIndex: number) => Promise<void>;
   addColumn: (boardId: string, title: string) => void;
   deleteColumn: (boardId: string, columnId: string) => void;
   renameColumn: (boardId: string, columnId: string, title: string) => void;
@@ -174,6 +122,7 @@ interface AppStore {
   onboarding: OnboardingState;
   setOnboarding: (data: Partial<OnboardingState>) => void;
   completeOnboarding: () => void;
+  resetAllData: () => Promise<boolean>;
 }
 
 export const useStore = create<AppStore>()(
@@ -207,73 +156,112 @@ export const useStore = create<AppStore>()(
     // -----------------------------------------------------------------
     // Folders
     // -----------------------------------------------------------------
-    folders: [DEFAULT_FOLDER],
+    folders: [],
 
-    addFolder: (name, parentId = null) => {
-      const folder: Folder = { id: createId(), name, created: now(), parentId: parentId || null };
-      set((s) => ({ folders: [...s.folders, folder] }));
-      // Fire-and-forget to backend
-      tc.folderCreate(name, parentId);
-      return folder;
+    addFolder: async (name, parentId = null) => {
+      try {
+        const created = await tc.folderCreate(name, parentId);
+        if (!created) {
+          if (!DEV_BOOTSTRAP_MODE) return null;
+        }
+        const folder = created || { id: createId(), name, created: now(), parentId: parentId || null };
+        set((s) => ({ folders: [...s.folders, folder] }));
+        return folder;
+      } catch (error) {
+        console.error('addFolder failed', error);
+        return null;
+      }
     },
 
-    renameFolder: (id, name) =>
-      set((s) => ({ folders: s.folders.map((f) => (f.id === id ? { ...f, name } : f)) })),
+    renameFolder: async (id, name) => {
+      try {
+        const ok = await tc.folderRename(id, name);
+        if (ok || DEV_BOOTSTRAP_MODE) {
+          set((s) => ({ folders: s.folders.map((f) => (f.id === id ? { ...f, name } : f)) }));
+        }
+      } catch (error) {
+        console.error('renameFolder failed', error);
+      }
+    },
 
-    deleteFolder: (id) => {
-      tc.folderDelete(id);
-      set((s) => ({
-        folders: s.folders.filter((f) => f.id !== id),
-        notes: s.notes.map((n) => (n.folderId === id ? { ...n, folderId: null } : n)),
-        boards: s.boards.map((b) => (b.folderId === id ? { ...b, folderId: null } : b)),
-        ui: s.ui.activeFolderId === id ? { ...s.ui, activeFolderId: null } : s.ui,
-      }));
+    deleteFolder: async (id) => {
+      try {
+        const ok = await tc.folderDelete(id);
+        if (ok || DEV_BOOTSTRAP_MODE) {
+          set((s) => ({
+            folders: s.folders.filter((f) => f.id !== id),
+            notes: s.notes.map((n) => (n.folderId === id ? { ...n, folderId: null } : n)),
+            boards: s.boards.map((b) => (b.folderId === id ? { ...b, folderId: null } : b)),
+            ui: s.ui.activeFolderId === id ? { ...s.ui, activeFolderId: null } : s.ui,
+          }));
+        }
+      } catch (error) {
+        console.error('deleteFolder failed', error);
+      }
     },
 
     // -----------------------------------------------------------------
     // Notes
     // -----------------------------------------------------------------
-    notes: [WELCOME_NOTE],
+    notes: [],
 
-    addNote: (title, parentId = null, isPrivate = false) => {
+    addNote: async (title, parentId = null, isPrivate = false) => {
       const activeFolderId = get().ui.activeFolderId;
-      const note: Note = {
-        id: createId(),
-        title,
-        content: '',
-        tags: [],
-        created: now(),
-        modified: now(),
-        parentId: parentId || null,
-        isFolder: false,
-        isPrivate,
-        folderId: activeFolderId,
-      };
-      set((s) => ({ notes: [...s.notes, note] }));
-      // Fire-and-forget to backend
-      tc.noteCreate(title, '', activeFolderId);
-      return note;
-    },
-
-    updateNote: (id, updates) => {
-      set((s) => ({
-        notes: s.notes.map((n) =>
-          n.id === id ? { ...n, ...updates, modified: now() } : n
-        ),
-      }));
-      // Fire-and-forget to backend
-      const note = get().notes.find((n) => n.id === id);
-      if (note) {
-        tc.noteUpdate(id, note.title, note.content, note.tags);
+      try {
+        const created = await tc.noteCreate(title, '', activeFolderId);
+        if (!created) {
+          if (!DEV_BOOTSTRAP_MODE) return null;
+        }
+        const note: Note = created || {
+          id: createId(),
+          title,
+          content: '',
+          tags: [],
+          created: now(),
+          modified: now(),
+          parentId: parentId || null,
+          isFolder: false,
+          isPrivate,
+          folderId: activeFolderId,
+        };
+        set((s) => ({ notes: [...s.notes, note] }));
+        return note;
+      } catch (error) {
+        console.error('addNote failed', error);
+        return null;
       }
     },
 
-    deleteNote: (id) => {
-      tc.noteDelete(id);
-      set((s) => ({
-        notes: s.notes.filter((n) => n.id !== id),
-        ui: s.ui.activeNoteId === id ? { ...s.ui, activeNoteId: null } : s.ui,
-      }));
+    updateNote: async (id, updates) => {
+      try {
+        const existing = get().notes.find((n) => n.id === id);
+        if (!existing) return;
+        const nextNote = { ...existing, ...updates, modified: now() };
+        const saved = await tc.noteUpdate(id, nextNote.title, nextNote.content, nextNote.tags);
+        if (saved || DEV_BOOTSTRAP_MODE) {
+          set((s) => ({
+            notes: s.notes.map((n) =>
+              n.id === id ? nextNote : n
+            ),
+          }));
+        }
+      } catch (error) {
+        console.error('updateNote failed', error);
+      }
+    },
+
+    deleteNote: async (id) => {
+      try {
+        const ok = await tc.noteDelete(id);
+        if (ok || DEV_BOOTSTRAP_MODE) {
+          set((s) => ({
+            notes: s.notes.filter((n) => n.id !== id),
+            ui: s.ui.activeNoteId === id ? { ...s.ui, activeNoteId: null } : s.ui,
+          }));
+        }
+      } catch (error) {
+        console.error('deleteNote failed', error);
+      }
     },
 
     getNoteById: (id) => get().notes.find((n) => n.id === id),
@@ -283,106 +271,143 @@ export const useStore = create<AppStore>()(
     // -----------------------------------------------------------------
     // Kanban
     // -----------------------------------------------------------------
-    boards: [DEFAULT_BOARD],
-    cards: DEFAULT_CARDS,
+    boards: [],
+    cards: [],
 
-    addBoard: (title) => {
+    addBoard: async (title) => {
       const activeFolderId = get().ui.activeFolderId;
-      const board: KanbanBoard = {
-        id: createId(),
-        title,
-        columns: [
-          { id: createId(), title: 'To Do', cardIds: [] },
-          { id: createId(), title: 'In Progress', cardIds: [] },
-          { id: createId(), title: 'Done', cardIds: [] },
-        ],
-        created: now(),
-        modified: now(),
-        folderId: activeFolderId,
-      };
-      set((s) => ({ boards: [...s.boards, board] }));
-      // Fire-and-forget to backend
-      tc.boardCreate(title, activeFolderId);
-      return board;
+      try {
+        const created = await tc.boardCreate(title, activeFolderId);
+        if (!created) {
+          if (!DEV_BOOTSTRAP_MODE) return null;
+        }
+        const board: KanbanBoard = created || {
+          id: createId(),
+          title,
+          columns: [
+            { id: createId(), title: 'To Do', cardIds: [] },
+            { id: createId(), title: 'In Progress', cardIds: [] },
+            { id: createId(), title: 'Done', cardIds: [] },
+          ],
+          created: now(),
+          modified: now(),
+          folderId: activeFolderId,
+        };
+        set((s) => ({ boards: [...s.boards, board] }));
+        return board;
+      } catch (error) {
+        console.error('addBoard failed', error);
+        return null;
+      }
     },
 
 
 
-    addCard: (boardId, columnId, title) => {
-      const card: KanbanCard = {
-        id: createId(),
-        title,
-        description: '',
-        noteId: null,
-        subtasks: [],
-        columnId,
-        boardId,
-        created: now(),
-      };
-      set((s) => ({
-        cards: [...s.cards, card],
-        boards: s.boards.map((b) =>
-          b.id === boardId
-            ? {
-                ...b,
-                modified: now(),
-                columns: b.columns.map((c) =>
-                  c.id === columnId ? { ...c, cardIds: [...c.cardIds, card.id] } : c
-                ),
-              }
-            : b
-        ),
-      }));
-      // Fire-and-forget
-      tc.cardCreate({ title, description: '', noteId: null, subtasks: [], columnId, boardId });
-      return card;
+    addCard: async (boardId, columnId, title) => {
+      try {
+        const created = await tc.cardCreate({ title, description: '', noteId: null, subtasks: [], columnId, boardId });
+        if (!created) {
+          if (!DEV_BOOTSTRAP_MODE) return null;
+        }
+        const card: KanbanCard = created || {
+          id: createId(),
+          title,
+          description: '',
+          noteId: null,
+          subtasks: [],
+          columnId,
+          boardId,
+          created: now(),
+        };
+        set((s) => ({
+          cards: [...s.cards, card],
+          boards: s.boards.map((b) =>
+            b.id === boardId
+              ? {
+                  ...b,
+                  modified: now(),
+                  columns: b.columns.map((c) =>
+                    c.id === columnId ? { ...c, cardIds: [...c.cardIds, card.id] } : c
+                  ),
+                }
+              : b
+          ),
+        }));
+        return card;
+      } catch (error) {
+        console.error('addCard failed', error);
+        return null;
+      }
     },
 
-    updateCard: (id, updates) =>
-      set((s) => ({
-        cards: s.cards.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-      })),
-
-    deleteCard: (id) => {
-      tc.cardDelete(id);
-      set((s) => ({
-        cards: s.cards.filter((c) => c.id !== id),
-        boards: s.boards.map((b) => ({
-          ...b,
-          columns: b.columns.map((col) => ({
-            ...col,
-            cardIds: col.cardIds.filter((cId) => cId !== id),
-          })),
-        })),
-      }));
+    updateCard: async (id, updates) => {
+      try {
+        const existing = get().cards.find((c) => c.id === id);
+        if (!existing) return;
+        const nextCard = { ...existing, ...updates };
+        const saved = await tc.cardUpdate(nextCard);
+        if (saved || DEV_BOOTSTRAP_MODE) {
+          set((s) => ({
+            cards: s.cards.map((c) => (c.id === id ? nextCard : c)),
+          }));
+        }
+      } catch (error) {
+        console.error('updateCard failed', error);
+      }
     },
 
-    moveCard: (cardId, fromColId, toColId, newIndex) => {
-      tc.cardMove(cardId, fromColId, toColId, newIndex);
-      set((s) => ({
-        cards: s.cards.map((c) =>
-          c.id === cardId ? { ...c, columnId: toColId } : c
-        ),
-        boards: s.boards.map((b) => ({
-          ...b,
-          columns: b.columns.map((col) => {
-            if (col.id === fromColId && col.id === toColId) {
-              const ids = col.cardIds.filter((id) => id !== cardId);
-              ids.splice(newIndex, 0, cardId);
-              return { ...col, cardIds: ids };
-            }
-            if (col.id === fromColId) {
-              return { ...col, cardIds: col.cardIds.filter((id) => id !== cardId) };
-            }
-            if (col.id === toColId) {
-              const ids = [...col.cardIds];
-              ids.splice(newIndex, 0, cardId);
-              return { ...col, cardIds: ids };
-            }
-            return col;
-          }),
-        })),
-      }));
+    deleteCard: async (id) => {
+      try {
+        const ok = await tc.cardDelete(id);
+        if (ok || DEV_BOOTSTRAP_MODE) {
+          set((s) => ({
+            cards: s.cards.filter((c) => c.id !== id),
+            boards: s.boards.map((b) => ({
+              ...b,
+              columns: b.columns.map((col) => ({
+                ...col,
+                cardIds: col.cardIds.filter((cId) => cId !== id),
+              })),
+            })),
+          }));
+        }
+      } catch (error) {
+        console.error('deleteCard failed', error);
+      }
+    },
+
+    moveCard: async (cardId, fromColId, toColId, newIndex) => {
+      try {
+        const ok = await tc.cardMove(cardId, fromColId, toColId, newIndex);
+        if (ok || DEV_BOOTSTRAP_MODE) {
+          set((s) => ({
+            cards: s.cards.map((c) =>
+              c.id === cardId ? { ...c, columnId: toColId } : c
+            ),
+            boards: s.boards.map((b) => ({
+              ...b,
+              columns: b.columns.map((col) => {
+                if (col.id === fromColId && col.id === toColId) {
+                  const ids = col.cardIds.filter((id) => id !== cardId);
+                  ids.splice(newIndex, 0, cardId);
+                  return { ...col, cardIds: ids };
+                }
+                if (col.id === fromColId) {
+                  return { ...col, cardIds: col.cardIds.filter((id) => id !== cardId) };
+                }
+                if (col.id === toColId) {
+                  const ids = [...col.cardIds];
+                  ids.splice(newIndex, 0, cardId);
+                  return { ...col, cardIds: ids };
+                }
+                return col;
+              }),
+            })),
+          }));
+        }
+      } catch (error) {
+        console.error('moveCard failed', error);
+      }
     },
 
     addColumn: (boardId, title) =>
@@ -522,13 +547,13 @@ export const useStore = create<AppStore>()(
     ui: {
       activeView: 'dashboard' as ViewMode,
       activeNoteId: null,
-      activeBoardId: 'default-board',
+      activeBoardId: null,
       inspectorOpen: true,
       commandPaletteOpen: false,
       sidebarCollapsed: false,
       fabOpen: false,
       inlineAgentOpen: false,
-      activeAgentSessionId: 'session-1',
+      activeAgentSessionId: null,
       notesTab: 'all' as const,
       activeFolderId: null,
     },
@@ -607,5 +632,32 @@ export const useStore = create<AppStore>()(
       set((s) => ({
         onboarding: { ...s.onboarding, completed: true },
       })),
+
+    resetAllData: async () => {
+      const resetOk = await tc.storageResetAll();
+      if (!resetOk) {
+        return false;
+      }
+
+      set((s) => ({
+        notes: [WELCOME_NOTE],
+        folders: [DEFAULT_FOLDER],
+        boards: [DEFAULT_BOARD],
+        cards: DEFAULT_CARDS,
+        agents: DEFAULT_AGENTS,
+        agentSessions: DEFAULT_SESSIONS,
+        customTemplates: [],
+        ui: {
+          ...s.ui,
+          activeView: 'dashboard',
+          activeNoteId: null,
+          activeBoardId: 'default-board',
+          activeFolderId: null,
+          activeAgentSessionId: 'session-1',
+        },
+      }));
+
+      return true;
+    },
   })
 );
