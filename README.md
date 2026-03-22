@@ -1,4 +1,4 @@
-# your-obsidian-dream
+# VIBO
 
 Cloudflare Workers deployment is configured for this Vite app.
 
