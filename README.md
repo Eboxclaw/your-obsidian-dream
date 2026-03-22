@@ -2,6 +2,17 @@
 
 Cloudflare Workers deployment is configured for this Vite app.
 
+## Product direction
+
+VIBO is being built as a **Tauri application with mobile-first UX**, while remaining fully compatible with desktop platforms.
+
+### Core engineering constraints
+
+- Design features to work across device classes first (phone, tablet, desktop), then optimize per platform.
+- Favor responsive layouts and input patterns that support both touch and pointer/keyboard.
+- Keep platform-specific logic behind adapters so shared application behavior stays consistent.
+- When implementation details are uncertain, avoid silent assumptions: explicitly annotate open questions for review.
+
 ## Local commands
 
 - `bun run build` — production build to `dist/`
