@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '@/lib/store';
 import type { UserRole } from '@/lib/types';
 import {
@@ -71,11 +71,18 @@ export function OnboardingWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [setupError, setSetupError] = useState('');
   const [setupStatus, setSetupStatus] = useState('');
+  const [biometricDone, setBiometricDone] = useState(false);
   const [defaultProviderKey, setDefaultProviderKey] = useState('');
   const [openAiProviderKey, setOpenAiProviderKey] = useState('');
   const [anthropicProviderKey, setAnthropicProviderKey] = useState('');
 
   const totalSteps = 5;
+
+  useEffect(() => {
+    if (subStep !== 'oauth') {
+      setBiometricDone(false);
+    }
+  }, [step, subStep]);
 
   const toggleIntegration = (id: string) => {
     setIntegrations((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -196,6 +203,7 @@ export function OnboardingWizard() {
     } else if (step === 2) {
       // If integrations are toggled on, show OAuth card
       if (hasActiveIntegration()) {
+        setBiometricDone(false);
         setSubStep('oauth');
       } else {
         setStep(3);
@@ -269,7 +277,7 @@ export function OnboardingWizard() {
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm">
         <div className="relative w-full max-w-xs mx-4 rounded-3xl border bg-card p-8 text-center shadow-xl animate-fade-in">
           <button
-            onClick={() => { setSubStep(null); setStep(3); }}
+            onClick={() => { setBiometricDone(false); setSubStep(null); setStep(3); }}
             className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
