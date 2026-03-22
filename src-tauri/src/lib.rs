@@ -52,12 +52,17 @@ pub fn run() {
             // Register event bus listeners for Kotlin → Rust tool calls
             event_system::register_listeners(&handle);
 
-            // TODO: remove event-spy after confirming real leap-ai event names in logs
-            // TEMPORARY - find real plugin event names, remove after first test run
-            let _debug_handle = app.handle().clone();
-            app.listen_any(move |event| {
-                log::debug!("[ViBo event-spy] event={} payload={:?}", event.event(), event.payload());
-            });
+            // TODO: remove after confirming real tauri-plugin-leap-ai event names in device logs
+            {
+                let spy_handle = app.handle().clone();
+                app.listen_any(move |event| {
+                    log::debug!(
+                        "[vibo-event-spy] event=\"{}\" payload={:?}",
+                        event.event(),
+                        event.payload()
+                    );
+                });
+            }
 
             let bridge_handle = app.handle().clone();
             app.listen("leap-ai://event", move |event| {
