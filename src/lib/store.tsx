@@ -37,6 +37,41 @@ const DEFAULT_SESSIONS: AgentSession[] = [
   },
 ];
 
+const DEFAULT_FOLDER: Folder = {
+  id: 'default-folder',
+  name: 'General',
+  created: now(),
+  parentId: null,
+};
+
+const WELCOME_NOTE: Note = {
+  id: 'welcome-note',
+  title: 'Welcome to ViBo',
+  content: '# Welcome to ViBo\n\nYour private, local-first AI notebook.\n\n- **Notes** — write in Markdown, link with [[wikilinks]]\n- **Kanban** — track tasks across boards\n- **Graph** — visualize your knowledge\n- **Agents** — run local AI tasks\n',
+  tags: ['welcome'],
+  created: now(),
+  modified: now(),
+  parentId: null,
+  isFolder: false,
+  isPrivate: false,
+  folderId: 'default-folder',
+};
+
+const DEFAULT_BOARD: KanbanBoard = {
+  id: 'default-board',
+  title: 'My Board',
+  columns: [
+    { id: 'col-todo', title: 'To Do', cardIds: [] },
+    { id: 'col-progress', title: 'In Progress', cardIds: [] },
+    { id: 'col-done', title: 'Done', cardIds: [] },
+  ],
+  created: now(),
+  modified: now(),
+  folderId: null,
+};
+
+const DEFAULT_CARDS: KanbanCard[] = [];
+
 
 // ---------------------------------------------------------------------------
 // Store interface
@@ -142,15 +177,23 @@ export const useStore = create<AppStore>()(
         cryptoClient.vaultGetStatus(),
       ]);
 
-      set({
+      const resolvedSessions = sessions && sessions.length > 0 ? sessions : DEFAULT_SESSIONS;
+      const resolvedBoards = boards && boards.length > 0 ? boards : [DEFAULT_BOARD];
+
+      set((s) => ({
         hydrated: true,
         notes: notes && notes.length > 0 ? notes : [WELCOME_NOTE],
         folders: folders && folders.length > 0 ? folders : [DEFAULT_FOLDER],
-        boards: boards && boards.length > 0 ? boards : [DEFAULT_BOARD],
+        boards: resolvedBoards,
         agents: agents && agents.length > 0 ? agents : DEFAULT_AGENTS,
-        agentSessions: sessions && sessions.length > 0 ? sessions : DEFAULT_SESSIONS,
+        agentSessions: resolvedSessions,
         vaultStatus: vaultStatus !== null ? vaultStatus : { initialized: false, unlocked: false, biometricAvailable: false },
-      });
+        ui: {
+          ...s.ui,
+          activeBoardId: resolvedBoards[0] ? resolvedBoards[0].id : 'default-board',
+          activeAgentSessionId: resolvedSessions[0] ? resolvedSessions[0].id : null,
+        },
+      }));
     },
 
     // -----------------------------------------------------------------
@@ -547,13 +590,13 @@ export const useStore = create<AppStore>()(
     ui: {
       activeView: 'dashboard' as ViewMode,
       activeNoteId: null,
-      activeBoardId: null,
+      activeBoardId: 'default-board',
       inspectorOpen: true,
       commandPaletteOpen: false,
       sidebarCollapsed: false,
       fabOpen: false,
       inlineAgentOpen: false,
-      activeAgentSessionId: null,
+      activeAgentSessionId: 'session-1',
       notesTab: 'all' as const,
       activeFolderId: null,
     },
