@@ -15,6 +15,8 @@ import { FolderSwitcher } from '@/components/layout/FolderSwitcher';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { Search } from 'lucide-react';
 import { LockScreen } from '@/components/LockScreen';
+import logoSvg from '@/assets/logo.svg';
+import NotFound from '@/pages/NotFound';
 
 const VIEWS_WITH_FOLDER_SWITCHER: string[] = ['dashboard', 'notebook', 'kanban', 'agent'];
 
@@ -66,7 +68,7 @@ export function AppShell() {
   const sensitiveViews = ['dashboard', 'notebook', 'kanban', 'agent', 'settings'];
   const needsVault = sensitiveViews.includes(ui.activeView);
 
-  const viewTitle = {
+  const viewTitleByMode: Record<string, string> = {
     dashboard: 'Home',
     notebook: 'Notes',
     kanban: 'Tasks',
@@ -74,9 +76,12 @@ export function AppShell() {
     agent: 'Agents',
     templates: 'Templates',
     settings: 'Settings',
-  }[ui.activeView];
+  };
 
-  const showFolderSwitcher = VIEWS_WITH_FOLDER_SWITCHER.includes(ui.activeView);
+  const activeView = ui.activeView;
+  const isKnownView = Object.prototype.hasOwnProperty.call(viewTitleByMode, activeView);
+  const viewTitle = isKnownView ? viewTitleByMode[activeView] : 'Not found';
+  const showFolderSwitcher = isKnownView && VIEWS_WITH_FOLDER_SWITCHER.includes(activeView);
 
   return (
     <div className="flex h-screen flex-col bg-background overflow-hidden">
@@ -106,13 +111,14 @@ export function AppShell() {
       {/* Main content */}
       <main className="flex-1 overflow-auto">
         {needsVault && !vaultStatus.unlocked && <LockScreen />}
-        {(!needsVault || vaultStatus.unlocked) && ui.activeView === 'dashboard' && <Dashboard />}
-        {(!needsVault || vaultStatus.unlocked) && ui.activeView === 'notebook' && <Notebook />}
-        {(!needsVault || vaultStatus.unlocked) && ui.activeView === 'kanban' && <KanbanView />}
-        {(!needsVault || vaultStatus.unlocked) && ui.activeView === 'graph' && <GraphView />}
-        {(!needsVault || vaultStatus.unlocked) && ui.activeView === 'agent' && <AgentView />}
-        {(!needsVault || vaultStatus.unlocked) && ui.activeView === 'templates' && <TemplatesView />}
-        {(!needsVault || vaultStatus.unlocked) && ui.activeView === 'settings' && <SettingsView />}
+        {(!needsVault || vaultStatus.unlocked) && isKnownView && activeView === 'dashboard' && <Dashboard />}
+        {(!needsVault || vaultStatus.unlocked) && isKnownView && activeView === 'notebook' && <Notebook />}
+        {(!needsVault || vaultStatus.unlocked) && isKnownView && activeView === 'kanban' && <KanbanView />}
+        {(!needsVault || vaultStatus.unlocked) && isKnownView && activeView === 'graph' && <GraphView />}
+        {(!needsVault || vaultStatus.unlocked) && isKnownView && activeView === 'agent' && <AgentView />}
+        {(!needsVault || vaultStatus.unlocked) && isKnownView && activeView === 'templates' && <TemplatesView />}
+        {(!needsVault || vaultStatus.unlocked) && isKnownView && activeView === 'settings' && <SettingsView />}
+        {(!needsVault || vaultStatus.unlocked) && !isKnownView && <NotFound />}
       </main>
 
       {/* Chat assistant must render as bottom Sheet */}

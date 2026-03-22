@@ -77,14 +77,14 @@ No `error[E...]` compiler lines were produced because dependency resolution fail
   - `?.`: CLEAN
   - `??`: CLEAN
 
-3.3 BrowserRouter: PRESENT `src/App.tsx:2,16,22`
-- It wraps the whole app tree.
+3.3 BrowserRouter: REMOVED
+- `src/App.tsx` now renders `AppShell` directly under providers (no route table).
 
 3.4 navigate() in store: PRESENT, Link usages: PARTIAL
 - navigate in store: PRESENT (`src/lib/store.tsx:137,605`).
 - `<Link` usage in `src/components/`: CLEAN.
 - `useNavigate` usage in `src/`: CLEAN.
-- Additional note: `href=` found in `src/pages/NotFound.tsx:16`.
+- Additional note: no `href=` route links found in frontend navigation points.
 
 3.5 ChatAssistant: SHEET_ONLY
 - Sheet implementation: `src/components/layout/ChatAssistant.tsx:116-159`.
@@ -148,4 +148,4 @@ No `error[E...]` compiler lines were produced because dependency resolution fail
 - Koog plugin still uses event-bus dispatch (`emitToolRequest` + `trigger`) instead of direct invoke.
 - `agentMaxIterations` configured to 10 (>5 rule).
 - `LeapPromptExecutor` does not implement PromptExecutor in current source.
-- BrowserRouter wraps full app (`src/App.tsx`) despite store-based navigation requirement.
+- Route-based shell navigation removed; store-driven `ui.activeView` handling is active in `AppShell`.
