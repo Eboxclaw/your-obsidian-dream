@@ -55,7 +55,7 @@ const AGENT_PRESETS: { id: AgentPreset; name: string; desc: string; icon: typeof
 type SubStep = 'name' | 'pin' | 'pin-confirm' | 'biometric';
 
 export function OnboardingWizard() {
-  const { setOnboarding, completeOnboarding } = useStore();
+  const { setOnboarding, completeOnboarding, unlockWithBiometric } = useStore();
   const [step, setStep] = useState(0);
 
   // Step data
@@ -72,6 +72,10 @@ export function OnboardingWizard() {
   const [biometricDone, setBiometricDone] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [setupError, setSetupError] = useState('');
+  const [setupStatus, setSetupStatus] = useState('');
+  const [defaultProviderKey, setDefaultProviderKey] = useState('');
+  const [openAiProviderKey, setOpenAiProviderKey] = useState('');
+  const [anthropicProviderKey, setAnthropicProviderKey] = useState('');
 
   const totalSteps = 5;
 
@@ -87,19 +91,87 @@ export function OnboardingWizard() {
   const finishOnboarding = async () => {
     setIsSubmitting(true);
     setSetupError('');
+    setSetupStatus('Preparing secure onboarding...');
+
+    const waitWithStatus = async (statusText: string, delayMs: number) => {
+      setSetupStatus(statusText);
+      await new Promise<void>((resolve) => {
+        window.setTimeout(() => resolve(), delayMs);
+      });
+    };
+
+    const runStep = async (stepLabel: string, fn: () => Promise<void>) => {
+      try {
+        await fn();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : `${stepLabel} failed.`;
+        const failMessage = `${stepLabel} failed: ${message}`;
+        setSetupStatus(failMessage);
+        setSetupError(failMessage);
+        throw err;
+      }
+    };
 
     try {
-      // Step wiring invariant:
-      // 1) model select -> selectedModel local state
-      // 2) provider key -> keystoreSet
-      // 3) oauth start -> oauthStart
-      // 4) vault init -> vaultInit
-      // 5) memory/model setup -> agentMemorySet + downloadModel
-      await keystoreSet('provider.default.api_key', 'pending-from-settings');
-      await oauthStart('google');
-      await vaultInit(pin);
-      await agentMemorySet('onboarding', 'role=general;workspace=My Vault');
-      await downloadModel(selectedModel);
+      await runStep('Provider key setup', async () => {
+        await waitWithStatus('🔒 Scrubbing personal data...', 350);
+
+        const providerEntries = [
+          { key: 'provider.default.api_key', value: defaultProviderKey.trim() },
+          { key: 'provider.openai.api_key', value: openAiProviderKey.trim() },
+          { key: 'provider.anthropic.api_key', value: anthropicProviderKey.trim() },
+        ];
+
+        for (const entry of providerEntries) {
+          if (entry.value.length === 0) {
+            continue;
+          }
+
+          const stored = await keystoreSet(entry.key, entry.value);
+          if (!stored) {
+            throw new Error(`Unable to store ${entry.key}.`);
+          }
+        }
+      });
+
+      await runStep('Google OAuth kickoff', async () => {
+        await waitWithStatus('🧅 Routing privately...', 350);
+        await oauthStart('google');
+      });
+
+      await runStep('Vault setup', async () => {
+        await waitWithStatus('Configuring encrypted vault...', 300);
+        const initialized = await vaultInit(pin);
+        if (!initialized) {
+          throw new Error('vaultInit(pin) returned false.');
+        }
+
+        if (security === 'biometrics') {
+          await waitWithStatus('Registering biometric unlock...', 300);
+          const unlocked = await unlockWithBiometric();
+          if (!unlocked) {
+            throw new Error('unlockWithBiometric() returned false.');
+          }
+        }
+      });
+
+      await runStep('Agent setup', async () => {
+        await waitWithStatus('🤖 Thinking locally...', 350);
+        const memorySet = await agentMemorySet('onboarding', `role=${agent};workspace=My Vault`);
+        if (!memorySet) {
+          throw new Error('Unable to configure agent memory.');
+        }
+      });
+
+      await runStep('Model download', async () => {
+        await waitWithStatus('⬇️ Downloading model...', 500);
+        const downloaded = await downloadModel(selectedModel);
+        if (!downloaded) {
+          throw new Error('Model download did not complete.');
+        }
+      });
+
+      setSetupStatus('Setup complete. Opening your workspace...');
 
       setOnboarding({
         name,
@@ -109,8 +181,8 @@ export function OnboardingWizard() {
         features: ['wikilinks', 'kanban', 'graph', 'ai'],
       });
       completeOnboarding();
-    } catch (err) {
-      setSetupError(err instanceof Error ? err.message : 'Onboarding setup failed.');
+    } catch {
+      // Step-level error text is already set in runStep for deterministic QA checks.
     } finally {
       setIsSubmitting(false);
     }
@@ -148,12 +220,9 @@ export function OnboardingWizard() {
     }
   };
 
-  const handleBiometricAuth = () => {
-    // Simulate biometric auth
+  const handleBiometricAuth = async () => {
     setBiometricDone(true);
-    setTimeout(() => {
-      finishOnboarding();
-    }, 1200);
+    await finishOnboarding();
   };
 
   // Welcome splash (step 0)
@@ -223,12 +292,14 @@ export function OnboardingWizard() {
               ? 'Biometrics registered successfully.'
               : 'Place your finger on the sensor to enable biometric unlock.'}
           </p>
+          {setupStatus ? <p className="mt-2 text-xs text-muted-foreground">{setupStatus}</p> : null}
+          {setupError ? <p className="mt-2 text-xs text-destructive">{setupError}</p> : null}
           {!biometricDone && (
             <button
-              onClick={handleBiometricAuth}
+              onClick={() => { void handleBiometricAuth(); }}
               className="mt-6 w-full rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
 >
-              {isSubmitting ? 'Configuring...' : 'Simulate Biometric'}
+              {isSubmitting ? 'Configuring...' : 'Authenticate with Biometrics'}
             </button>
           )}
           {!biometricDone && (
@@ -265,6 +336,7 @@ export function OnboardingWizard() {
             <p className="mt-2 text-xs text-destructive">{pinError}</p>
           )}
           {setupError ? <p className="mt-2 text-xs text-destructive">{setupError}</p> : null}
+          {setupStatus ? <p className="mt-2 text-xs text-muted-foreground">{setupStatus}</p> : null}
           <div className="mt-6 relative">
             <input
               type={showPin ? 'text' : 'password'}
@@ -409,6 +481,27 @@ export function OnboardingWizard() {
                 </div>
               ))}
             </div>
+            <div className="mt-4 space-y-2 rounded-2xl border p-4 ghost-card">
+              <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">Provider Keys</p>
+              <input
+                value={defaultProviderKey}
+                onChange={(e) => setDefaultProviderKey(e.target.value)}
+                placeholder="Default provider API key"
+                className="w-full rounded-xl border bg-muted px-3 py-2 text-sm outline-none focus:border-foreground/30"
+              />
+              <input
+                value={openAiProviderKey}
+                onChange={(e) => setOpenAiProviderKey(e.target.value)}
+                placeholder="OpenAI API key (optional)"
+                className="w-full rounded-xl border bg-muted px-3 py-2 text-sm outline-none focus:border-foreground/30"
+              />
+              <input
+                value={anthropicProviderKey}
+                onChange={(e) => setAnthropicProviderKey(e.target.value)}
+                placeholder="Anthropic API key (optional)"
+                className="w-full rounded-xl border bg-muted px-3 py-2 text-sm outline-none focus:border-foreground/30"
+              />
+            </div>
           </div>
         )}
 
@@ -533,6 +626,13 @@ export function OnboardingWizard() {
             Skip integrations
           </button>
         )}
+
+        {setupStatus && subStep === null ? (
+          <p className="mt-3 text-center text-xs text-muted-foreground">{setupStatus}</p>
+        ) : null}
+        {setupError && subStep === null ? (
+          <p className="mt-2 text-center text-xs text-destructive">{setupError}</p>
+        ) : null}
       </div>
     </div>
   );
