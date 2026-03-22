@@ -1,6 +1,6 @@
 /**
  * tauriClient.ts — Typed wrappers around Tauri invoke() commands.
- * All data flows through here. No localStorage, no fetch().
+ * All data flows through here. No browser storage, no direct HTTP from UI.
  *
  * When the Rust backend is not available (web preview), these
  * return stub data so the UI can render without crashing.
