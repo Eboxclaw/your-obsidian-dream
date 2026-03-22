@@ -20,7 +20,6 @@ import {
   X,
   CheckCircle2,
 } from 'lucide-react';
-import logoSvg from '@/assets/logo.svg';
 import { SmokeParticles } from '@/components/effects/SmokeParticles';
 import { keystoreSet, vaultInit } from '@/lib/crypto';
 import { oauthStart } from '@/lib/tauriClient';
@@ -41,7 +40,7 @@ const INTEGRATIONS = [
 
 const SECURITY_OPTIONS: { id: SecurityMethod; name: string; desc: string; icon: typeof Fingerprint }[] = [
   { id: 'biometrics', name: 'Biometrics', desc: 'Face ID / Fingerprint', icon: Fingerprint },
-  { id: 'pin', name: 'Numeric PIN', desc: '4-6 digit code', icon: KeyRound },
+  { id: 'pin', name: 'Password', desc: 'Secure password', icon: KeyRound },
   { id: 'passphrase', name: 'Passphrase', desc: 'Word-based password', icon: Shield },
 ];
 
@@ -52,7 +51,7 @@ const AGENT_PRESETS: { id: AgentPreset; name: string; desc: string; icon: typeof
   { id: 'writer', name: 'Content Writer', desc: 'Writing, editing, and summarizing', icon: PenTool, emoji: '✍️' },
 ];
 
-type SubStep = 'name' | 'pin' | 'pin-confirm' | 'biometric';
+type SubStep = 'name' | 'pin' | 'pin-confirm' | 'oauth';
 
 export function OnboardingWizard() {
   const { setOnboarding, completeOnboarding, unlockWithBiometric } = useStore();
@@ -69,7 +68,6 @@ export function OnboardingWizard() {
   const [showPin, setShowPin] = useState(false);
   const [subStep, setSubStep] = useState<SubStep | null>(null);
   const [pinError, setPinError] = useState('');
-  const [biometricDone, setBiometricDone] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [setupError, setSetupError] = useState('');
   const [setupStatus, setSetupStatus] = useState('');
@@ -81,6 +79,10 @@ export function OnboardingWizard() {
 
   const toggleIntegration = (id: string) => {
     setIntegrations((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const hasActiveIntegration = () => {
+    return Object.values(integrations).some((v) => v);
   };
 
   const canProceed = () => {
@@ -176,7 +178,7 @@ export function OnboardingWizard() {
       setOnboarding({
         name,
         role: 'general' as UserRole,
-        workspaceName: 'My Vault',
+        workspaceName: 'MyVault',
         theme: 'dark',
         features: ['wikilinks', 'kanban', 'graph', 'ai'],
       });
@@ -191,10 +193,17 @@ export function OnboardingWizard() {
   const handleNext = () => {
     if (step === 0) {
       setStep(1);
+    } else if (step === 2) {
+      // If integrations are toggled on, show OAuth card
+      if (hasActiveIntegration()) {
+        setSubStep('oauth');
+      } else {
+        setStep(3);
+      }
     } else if (step < 5) {
       setStep(step + 1);
     } else if (step === 5 && !subStep) {
-      // After name, go to PIN setup
+      // After name, go to password setup
       setSubStep('pin');
     }
   };
@@ -206,17 +215,12 @@ export function OnboardingWizard() {
       setSubStep('pin-confirm');
     } else if (subStep === 'pin-confirm') {
       if (pinConfirm !== pin) {
-        setPinError('PINs do not match. Try again.');
+        setPinError('Passwords do not match. Try again.');
         setPinConfirm('');
         return;
       }
       setPinError('');
-      // If biometrics selected, show biometric popup
-      if (security === 'biometrics') {
-        setSubStep('biometric');
-      } else {
-        void finishOnboarding();
-      }
+      void finishOnboarding();
     }
   };
 
@@ -231,9 +235,6 @@ export function OnboardingWizard() {
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
         <SmokeParticles count={8} />
         <div className="relative z-10 w-full max-w-sm px-6 text-center">
-          <div className="mb-8 flex justify-center">
-            <img src={logoSvg} alt="ViBo" className="h-16 w-16 logo-glow ghost-float" />
-          </div>
           <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
             ViBoAI · Virtual Notebook
           </p>
@@ -262,35 +263,25 @@ export function OnboardingWizard() {
     );
   }
 
-  // Biometric popup
-  if (subStep === 'biometric') {
+  // Google OAuth card
+  if (subStep === 'oauth') {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm">
         <div className="relative w-full max-w-xs mx-4 rounded-3xl border bg-card p-8 text-center shadow-xl animate-fade-in">
           <button
-            onClick={() => { setSubStep('pin-confirm'); }}
+            onClick={() => { setSubStep(null); setStep(3); }}
             className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
           <div className="mb-6 flex justify-center">
-            <div className={`flex h-20 w-20 items-center justify-center rounded-full border-2 aether-transition ${
-              biometricDone ? 'border-accent bg-accent/10' : 'border-border bg-muted'
-            }`}>
-              {biometricDone ? (
-                <CheckCircle2 className="h-10 w-10 text-accent" />
-              ) : (
-                <Fingerprint className="h-10 w-10 text-foreground" />
-              )}
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+              <Mail className="h-7 w-7 text-foreground" />
             </div>
           </div>
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            {biometricDone ? 'Authenticated' : 'Touch to Authenticate'}
-          </h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Connect to Google</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {biometricDone
-              ? 'Biometrics registered successfully.'
-              : 'Place your finger on the sensor to enable biometric unlock.'}
+            Sign in to sync your calendar and email with ViBo agents.
           </p>
           {setupStatus ? <p className="mt-2 text-xs text-muted-foreground">{setupStatus}</p> : null}
           {setupError ? <p className="mt-2 text-xs text-destructive">{setupError}</p> : null}
@@ -315,7 +306,7 @@ export function OnboardingWizard() {
     );
   }
 
-  // PIN setup / confirm sub-steps
+  // Password setup / confirm sub-steps
   if (subStep === 'pin' || subStep === 'pin-confirm') {
     const isConfirm = subStep === 'pin-confirm';
     return (
@@ -327,10 +318,10 @@ export function OnboardingWizard() {
             </div>
           </div>
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            {isConfirm ? 'Confirm Your PIN' : 'Set Up Encryption'}
+            {isConfirm ? 'Confirm Your Password' : 'Set Up Encryption'}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {isConfirm ? 'Re-enter your PIN to confirm' : 'Create a PIN to encrypt your notes at rest'}
+            {isConfirm ? 'Re-enter your password to confirm' : 'Create a password to encrypt your notes at rest'}
           </p>
           {pinError && (
             <p className="mt-2 text-xs text-destructive">{pinError}</p>
@@ -345,7 +336,7 @@ export function OnboardingWizard() {
                 setPinError('');
                 isConfirm ? setPinConfirm(e.target.value) : setPin(e.target.value);
               }}
-              placeholder={isConfirm ? 'Confirm PIN...' : 'Enter PIN...'}
+              placeholder={isConfirm ? 'Confirm password...' : 'Enter password...'}
               className="w-full rounded-2xl border bg-muted px-4 py-4 text-center text-sm outline-none focus:border-foreground/30 aether-transition pr-12"
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handlePinNext()}
@@ -374,15 +365,15 @@ export function OnboardingWizard() {
             </button>
             <button
               onClick={handlePinNext}
-              disabled={isConfirm ? pinConfirm.length < 4 : pin.length < 4}
+              disabled={(isConfirm ? pinConfirm.length < 4 : pin.length < 4) || isSubmitting}
               className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground disabled:opacity-40 aether-transition hover:opacity-90"
             >
-              {isConfirm ? 'Confirm' : 'Next'}
+              {isSubmitting ? 'Setting up...' : isConfirm ? 'Confirm' : 'Next'}
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
           <p className="mt-4 text-[11px] text-muted-foreground">
-            Your PIN derives an AES-256 key to<br />encrypt all notes locally
+            Your password derives an AES-256 key to<br />encrypt all notes locally
           </p>
         </div>
       </div>
@@ -512,7 +503,7 @@ export function OnboardingWizard() {
               <h2 className="text-xl font-semibold tracking-tight text-foreground">Secure your</h2>
               <h2 className="text-xl italic text-muted-foreground">vault.</h2>
               <p className="mt-3 text-sm text-muted-foreground">
-                Biometrics unlock first, PIN as fallback.
+                Biometrics unlock first, password as fallback.
               </p>
             </div>
             <div className="space-y-2">
