@@ -37,8 +37,17 @@ type HydrationSnapshot = BackendHydrationSnapshot & {
 };
 
 const DEFAULT_AGENTS: AgentConfig[] = [
-  { id: 'assistant', name: 'General Assistant', description: 'Helps with notes, tasks, and brainstorming', model: 'LFM2-350M-Extract', skillIds: [], roleIds: [], icon: 'bot', active: true },
-  { id: 'researcher', name: 'Research Agent', description: 'Summarizes and analyzes your notes', model: 'LFM2-350M-Extract', skillIds: [], roleIds: [], icon: 'search', active: true },
+  { id: 'agent-manager', name: 'Manager', description: 'Coordinates tasks and delegates work', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-manager'], icon: 'target', active: true },
+  { id: 'agent-assistant', name: 'Assistant', description: 'General-purpose help and note-taking', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-assistant'], icon: 'sparkles', active: true },
+  { id: 'agent-code', name: 'Code Assistant', description: 'Programming help and code review', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-code'], icon: 'code', active: true },
+  { id: 'agent-writer', name: 'Content Writer', description: 'Writing, editing, and summarizing', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-writer'], icon: 'pen-tool', active: true },
+];
+
+const DEFAULT_ROLES: AgentRole[] = [
+  { id: 'role-manager', name: 'Manager', description: 'Coordinates tasks and delegates work' },
+  { id: 'role-assistant', name: 'Assistant', description: 'General-purpose help and note-taking' },
+  { id: 'role-code', name: 'Code Assistant', description: 'Programming help and code review' },
+  { id: 'role-writer', name: 'Content Writer', description: 'Writing, editing, and summarizing' },
 ];
 
 const DEFAULT_SESSIONS: AgentSession[] = [
@@ -53,7 +62,7 @@ const DEFAULT_SESSIONS: AgentSession[] = [
 
 const DEFAULT_FOLDER: Folder = {
   id: 'default-folder',
-  name: 'General',
+  name: 'MyVault',
   created: now(),
   parentId: null,
 };
@@ -709,12 +718,12 @@ export const useStore = create<AppStore>()(
     },
 
     lockVault: async () => {
-      const ok = await cryptoClient.vaultLock();
+      await cryptoClient.lockVault();
       const status = await cryptoClient.vaultGetStatus();
       if (status !== null) {
         set(() => ({ vaultStatus: status }));
       }
-      return ok;
+      return true;
     },
 
     // -----------------------------------------------------------------
@@ -725,7 +734,7 @@ export const useStore = create<AppStore>()(
       step: 0,
       role: null,
       name: '',
-      workspaceName: 'My Vault',
+      workspaceName: 'MyVault',
       theme: 'dark' as const,
       features: ['wikilinks', 'kanban', 'graph'],
     },
