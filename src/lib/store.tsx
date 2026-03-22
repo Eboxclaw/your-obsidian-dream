@@ -23,8 +23,17 @@ const now = () => new Date().toISOString();
 const DEV_BOOTSTRAP_MODE = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_BOOTSTRAP === 'true';
 
 const DEFAULT_AGENTS: AgentConfig[] = [
-  { id: 'assistant', name: 'General Assistant', description: 'Helps with notes, tasks, and brainstorming', model: 'LFM2-350M-Extract', skillIds: [], roleIds: [], icon: 'bot', active: true },
-  { id: 'researcher', name: 'Research Agent', description: 'Summarizes and analyzes your notes', model: 'LFM2-350M-Extract', skillIds: [], roleIds: [], icon: 'search', active: true },
+  { id: 'agent-manager', name: 'Manager', description: 'Coordinates tasks and delegates work', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-manager'], icon: 'target', active: true },
+  { id: 'agent-assistant', name: 'Assistant', description: 'General-purpose help and note-taking', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-assistant'], icon: 'sparkles', active: true },
+  { id: 'agent-code', name: 'Code Assistant', description: 'Programming help and code review', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-code'], icon: 'code', active: true },
+  { id: 'agent-writer', name: 'Content Writer', description: 'Writing, editing, and summarizing', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-writer'], icon: 'pen-tool', active: true },
+];
+
+const DEFAULT_ROLES: AgentRole[] = [
+  { id: 'role-manager', name: 'Manager', description: 'Coordinates tasks and delegates work' },
+  { id: 'role-assistant', name: 'Assistant', description: 'General-purpose help and note-taking' },
+  { id: 'role-code', name: 'Code Assistant', description: 'Programming help and code review' },
+  { id: 'role-writer', name: 'Content Writer', description: 'Writing, editing, and summarizing' },
 ];
 
 const DEFAULT_SESSIONS: AgentSession[] = [
@@ -39,7 +48,7 @@ const DEFAULT_SESSIONS: AgentSession[] = [
 
 const DEFAULT_FOLDER: Folder = {
   id: 'default-folder',
-  name: 'General',
+  name: 'MyVault',
   created: now(),
   parentId: null,
 };
@@ -493,7 +502,7 @@ export const useStore = create<AppStore>()(
     // -----------------------------------------------------------------
     agents: DEFAULT_AGENTS,
     skills: [],
-    roles: [],
+    roles: DEFAULT_ROLES,
     agentSessions: DEFAULT_SESSIONS,
 
     addAgent: (name, description, model = 'LFM2-350M-Extract', skillIds = [], roleIds = []) => {
@@ -598,7 +607,7 @@ export const useStore = create<AppStore>()(
       inlineAgentOpen: false,
       activeAgentSessionId: 'session-1',
       notesTab: 'all' as const,
-      activeFolderId: null,
+      activeFolderId: 'default-folder',
     },
 
     setView: (view) => set((s) => ({ ui: { ...s.ui, activeView: view } })),
@@ -661,7 +670,7 @@ export const useStore = create<AppStore>()(
       step: 0,
       role: null,
       name: '',
-      workspaceName: 'My Vault',
+      workspaceName: 'MyVault',
       theme: 'dark' as const,
       features: ['wikilinks', 'kanban', 'graph'],
     },
@@ -688,6 +697,7 @@ export const useStore = create<AppStore>()(
         boards: [DEFAULT_BOARD],
         cards: DEFAULT_CARDS,
         agents: DEFAULT_AGENTS,
+        roles: DEFAULT_ROLES,
         agentSessions: DEFAULT_SESSIONS,
         customTemplates: [],
         ui: {
@@ -695,7 +705,7 @@ export const useStore = create<AppStore>()(
           activeView: 'dashboard',
           activeNoteId: null,
           activeBoardId: 'default-board',
-          activeFolderId: null,
+          activeFolderId: 'default-folder',
           activeAgentSessionId: 'session-1',
         },
       }));
