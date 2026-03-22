@@ -4,7 +4,7 @@
  * streaming generation via the plugin bridge.
  *
  * All calls route through invoke('plugin:leap-ai|<command>').
- * No HTTP calls. No fetch(). No API keys in frontend.
+ * No HTTP calls from the frontend. No API keys in frontend.
  */
 
 import type { RuntimeInfo, CachedModel } from '@/lib/types';
