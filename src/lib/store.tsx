@@ -654,7 +654,7 @@ export const useStore = create<AppStore>()(
     },
 
     lockVault: async () => {
-      const ok = await cryptoClient.vaultLock();
+      const ok = await cryptoClient.lockVault();
       const status = await cryptoClient.vaultGetStatus();
       if (status !== null) {
         set(() => ({ vaultStatus: status }));
