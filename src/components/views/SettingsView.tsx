@@ -6,7 +6,7 @@ import { oauthStart } from '@/lib/tauriClient';
 import { runtimeInfo } from '@/lib/leapClient';
 
 export function SettingsView() {
-  const { notes, boards, cards, vaultStatus, refreshVaultStatus } = useStore();
+  const { notes, boards, cards, ui, vaultStatus, refreshVaultStatus } = useStore();
   const [providerKey, setProviderKey] = useState('');
   const [model, setModel] = useState('llama3');
   const [deviceInfo, setDeviceInfo] = useState('Loading runtime...');
@@ -108,6 +108,14 @@ export function SettingsView() {
           <div className="flex justify-between text-muted-foreground"><span>Notes</span><span className="font-mono text-foreground">{notes.length}</span></div>
           <div className="flex justify-between text-muted-foreground"><span>Boards</span><span className="font-mono text-foreground">{boards.length}</span></div>
           <div className="flex justify-between text-muted-foreground"><span>Cards</span><span className="font-mono text-foreground">{cards.length}</span></div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border bg-card p-4">
+        <h2 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-3">Diagnostics</h2>
+        <div className="space-y-2 text-xs">
+          <div className="flex justify-between text-muted-foreground"><span>Store mode</span><span className="font-mono text-foreground">{ui.diagnosticsMode}</span></div>
+          <div className="flex justify-between text-muted-foreground"><span>Fallback data</span><span className="font-mono text-foreground">{ui.fallbackDataActive ? 'active' : 'off'}</span></div>
         </div>
       </section>
 
