@@ -88,11 +88,6 @@ export function AppShell() {
       {/* Top bar */}
       <header className="flex h-11 shrink-0 items-center justify-between border-b px-4">
         <div className="flex items-center gap-2.5">
-          <img
-            src={logoSvg}
-            alt="ViBo"
-            className="h-7 w-7 dark:drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]"
-          />
           <span className="text-sm font-semibold tracking-tight text-foreground">
             {viewTitle}
           </span>
