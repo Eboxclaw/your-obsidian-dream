@@ -68,6 +68,7 @@ export function OnboardingWizard() {
   const [showPin, setShowPin] = useState(false);
   const [subStep, setSubStep] = useState<SubStep | null>(null);
   const [pinError, setPinError] = useState('');
+  const [isPinConfirmed, setIsPinConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [setupError, setSetupError] = useState('');
   const [setupStatus, setSetupStatus] = useState('');
@@ -91,6 +92,12 @@ export function OnboardingWizard() {
   };
 
   const finishOnboarding = async () => {
+    if (pin.trim().length === 0 || !isPinConfirmed) {
+      setSetupStatus('');
+      setSetupError('Pass key confirmation is required before onboarding can complete.');
+      return;
+    }
+
     setIsSubmitting(true);
     setSetupError('');
     setSetupStatus('Preparing secure onboarding...');
@@ -211,22 +218,28 @@ export function OnboardingWizard() {
   const handlePinNext = () => {
     if (subStep === 'pin') {
       if (pin.length < 4) return;
+      setIsPinConfirmed(false);
       setPinError('');
       setSubStep('pin-confirm');
     } else if (subStep === 'pin-confirm') {
       if (pinConfirm !== pin) {
+        setIsPinConfirmed(false);
         setPinError('Passwords do not match. Try again.');
         setPinConfirm('');
         return;
       }
+      setIsPinConfirmed(true);
       setPinError('');
       void finishOnboarding();
     }
   };
 
-  const handleBiometricAuth = async () => {
-    setBiometricDone(true);
-    await finishOnboarding();
+  const handleBiometricAuth = () => {
+    setSecurity('biometrics');
+    setSetupError('');
+    setSetupStatus('');
+    setSubStep(null);
+    setStep(3);
   };
 
   // Welcome splash (step 0)
@@ -285,22 +298,21 @@ export function OnboardingWizard() {
           </p>
           {setupStatus ? <p className="mt-2 text-xs text-muted-foreground">{setupStatus}</p> : null}
           {setupError ? <p className="mt-2 text-xs text-destructive">{setupError}</p> : null}
-          {!biometricDone && (
-            <button
-              onClick={() => { void handleBiometricAuth(); }}
-              className="mt-6 w-full rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
->
-              {isSubmitting ? 'Configuring...' : 'Authenticate with Biometrics'}
-            </button>
-          )}
-          {!biometricDone && (
-            <button
-              onClick={() => { void finishOnboarding(); }}
-              className="mt-3 w-full rounded-2xl border py-3 text-sm text-muted-foreground hover:text-foreground aether-transition"
-            >
-              Skip for now
-            </button>
-          )}
+          <button
+            onClick={handleBiometricAuth}
+            className="mt-6 w-full rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
+          >
+            Authenticate with Biometrics
+          </button>
+          <button
+            onClick={() => {
+              setSubStep(null);
+              setStep(3);
+            }}
+            className="mt-3 w-full rounded-2xl border py-3 text-sm text-muted-foreground hover:text-foreground aether-transition"
+          >
+            Skip for now
+          </button>
         </div>
       </div>
     );
@@ -334,6 +346,7 @@ export function OnboardingWizard() {
               value={isConfirm ? pinConfirm : pin}
               onChange={(e) => {
                 setPinError('');
+                setIsPinConfirmed(false);
                 isConfirm ? setPinConfirm(e.target.value) : setPin(e.target.value);
               }}
               placeholder={isConfirm ? 'Confirm password...' : 'Enter password...'}
