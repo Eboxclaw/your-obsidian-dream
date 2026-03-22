@@ -127,6 +127,8 @@ export interface UIState {
   activeAgentSessionId: string | null;
   notesTab: 'all' | 'private';
   activeFolderId: string | null;
+  diagnosticsMode: 'backend-only' | 'dev-bootstrap';
+  fallbackDataActive: boolean;
 }
 
 // ---------------------------------------------------------------------------

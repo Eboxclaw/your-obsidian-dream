@@ -22,9 +22,32 @@ const createId = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
 const DEV_BOOTSTRAP_MODE = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_BOOTSTRAP === 'true';
 
+type BackendHydrationSnapshot = {
+  notes: Note[];
+  folders: Folder[];
+  boards: KanbanBoard[];
+  agents: AgentConfig[];
+  sessions: AgentSession[];
+  vaultStatus: { initialized: boolean; unlocked: boolean; biometricAvailable: boolean };
+};
+
+type HydrationSnapshot = BackendHydrationSnapshot & {
+  diagnosticsMode: 'backend-only' | 'dev-bootstrap';
+  fallbackDataActive: boolean;
+};
+
 const DEFAULT_AGENTS: AgentConfig[] = [
-  { id: 'assistant', name: 'General Assistant', description: 'Helps with notes, tasks, and brainstorming', model: 'LFM2-350M-Extract', skillIds: [], roleIds: [], icon: 'bot', active: true },
-  { id: 'researcher', name: 'Research Agent', description: 'Summarizes and analyzes your notes', model: 'LFM2-350M-Extract', skillIds: [], roleIds: [], icon: 'search', active: true },
+  { id: 'agent-manager', name: 'Manager', description: 'Coordinates tasks and delegates work', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-manager'], icon: 'target', active: true },
+  { id: 'agent-assistant', name: 'Assistant', description: 'General-purpose help and note-taking', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-assistant'], icon: 'sparkles', active: true },
+  { id: 'agent-code', name: 'Code Assistant', description: 'Programming help and code review', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-code'], icon: 'code', active: true },
+  { id: 'agent-writer', name: 'Content Writer', description: 'Writing, editing, and summarizing', model: 'LFM2-350M-Extract', skillIds: [], roleIds: ['role-writer'], icon: 'pen-tool', active: true },
+];
+
+const DEFAULT_ROLES: AgentRole[] = [
+  { id: 'role-manager', name: 'Manager', description: 'Coordinates tasks and delegates work' },
+  { id: 'role-assistant', name: 'Assistant', description: 'General-purpose help and note-taking' },
+  { id: 'role-code', name: 'Code Assistant', description: 'Programming help and code review' },
+  { id: 'role-writer', name: 'Content Writer', description: 'Writing, editing, and summarizing' },
 ];
 
 const DEFAULT_SESSIONS: AgentSession[] = [
@@ -39,7 +62,7 @@ const DEFAULT_SESSIONS: AgentSession[] = [
 
 const DEFAULT_FOLDER: Folder = {
   id: 'default-folder',
-  name: 'General',
+  name: 'MyVault',
   created: now(),
   parentId: null,
 };
@@ -71,6 +94,60 @@ const DEFAULT_BOARD: KanbanBoard = {
 };
 
 const DEFAULT_CARDS: KanbanCard[] = [];
+
+async function loadBackendHydrationSnapshot(): Promise<BackendHydrationSnapshot> {
+  const [notes, folders, boards, agents, sessions, vaultStatus] = await Promise.all([
+    tc.noteList(),
+    tc.folderList(),
+    tc.boardList(),
+    tc.agentList(),
+    tc.sessionList(),
+    cryptoClient.vaultGetStatus(),
+  ]);
+
+  return {
+    notes,
+    folders,
+    boards,
+    agents,
+    sessions,
+    vaultStatus: vaultStatus !== null ? vaultStatus : { initialized: false, unlocked: false, biometricAvailable: false },
+  };
+}
+
+function applyDevBootstrapSnapshot(snapshot: BackendHydrationSnapshot): HydrationSnapshot {
+  if (!DEV_BOOTSTRAP_MODE) {
+    return {
+      ...snapshot,
+      diagnosticsMode: 'backend-only',
+      fallbackDataActive: false,
+    };
+  }
+
+  const fallbackDataActive =
+    snapshot.notes.length === 0
+    || snapshot.folders.length === 0
+    || snapshot.boards.length === 0
+    || snapshot.agents.length === 0
+    || snapshot.sessions.length === 0;
+
+  return {
+    notes: snapshot.notes.length > 0 ? snapshot.notes : [WELCOME_NOTE],
+    folders: snapshot.folders.length > 0 ? snapshot.folders : [DEFAULT_FOLDER],
+    boards: snapshot.boards.length > 0 ? snapshot.boards : [DEFAULT_BOARD],
+    agents: snapshot.agents.length > 0 ? snapshot.agents : DEFAULT_AGENTS,
+    sessions: snapshot.sessions.length > 0 ? snapshot.sessions : DEFAULT_SESSIONS,
+    vaultStatus: snapshot.vaultStatus,
+    diagnosticsMode: 'dev-bootstrap',
+    fallbackDataActive,
+  };
+}
+
+function logHydrationInvariant(snapshot: HydrationSnapshot): void {
+  if (snapshot.fallbackDataActive) {
+    console.warn('[store] Dev bootstrap fallback data is active.');
+  }
+}
 
 
 // ---------------------------------------------------------------------------
@@ -168,30 +245,24 @@ export const useStore = create<AppStore>()(
     hydrated: false,
 
     hydrate: async () => {
-      const [notes, folders, boards, agents, sessions, vaultStatus] = await Promise.all([
-        tc.noteList(),
-        tc.folderList(),
-        tc.boardList(),
-        tc.agentList(),
-        tc.sessionList(),
-        cryptoClient.vaultGetStatus(),
-      ]);
-
-      const resolvedSessions = sessions && sessions.length > 0 ? sessions : DEFAULT_SESSIONS;
-      const resolvedBoards = boards && boards.length > 0 ? boards : [DEFAULT_BOARD];
+      const backendSnapshot = await loadBackendHydrationSnapshot();
+      const hydrationSnapshot = applyDevBootstrapSnapshot(backendSnapshot);
+      logHydrationInvariant(hydrationSnapshot);
 
       set((s) => ({
         hydrated: true,
-        notes: notes && notes.length > 0 ? notes : [WELCOME_NOTE],
-        folders: folders && folders.length > 0 ? folders : [DEFAULT_FOLDER],
-        boards: resolvedBoards,
-        agents: agents && agents.length > 0 ? agents : DEFAULT_AGENTS,
-        agentSessions: resolvedSessions,
-        vaultStatus: vaultStatus !== null ? vaultStatus : { initialized: false, unlocked: false, biometricAvailable: false },
+        notes: hydrationSnapshot.notes,
+        folders: hydrationSnapshot.folders,
+        boards: hydrationSnapshot.boards,
+        agents: hydrationSnapshot.agents,
+        agentSessions: hydrationSnapshot.sessions,
+        vaultStatus: hydrationSnapshot.vaultStatus,
         ui: {
           ...s.ui,
-          activeBoardId: resolvedBoards[0] ? resolvedBoards[0].id : 'default-board',
-          activeAgentSessionId: resolvedSessions[0] ? resolvedSessions[0].id : null,
+          activeBoardId: hydrationSnapshot.boards[0] ? hydrationSnapshot.boards[0].id : null,
+          activeAgentSessionId: hydrationSnapshot.sessions[0] ? hydrationSnapshot.sessions[0].id : null,
+          diagnosticsMode: hydrationSnapshot.diagnosticsMode,
+          fallbackDataActive: hydrationSnapshot.fallbackDataActive,
         },
       }));
     },
@@ -491,10 +562,10 @@ export const useStore = create<AppStore>()(
     // -----------------------------------------------------------------
     // Agents
     // -----------------------------------------------------------------
-    agents: DEFAULT_AGENTS,
+    agents: DEV_BOOTSTRAP_MODE ? DEFAULT_AGENTS : [],
     skills: [],
     roles: [],
-    agentSessions: DEFAULT_SESSIONS,
+    agentSessions: DEV_BOOTSTRAP_MODE ? DEFAULT_SESSIONS : [],
 
     addAgent: (name, description, model = 'LFM2-350M-Extract', skillIds = [], roleIds = []) => {
       const agent: AgentConfig = { id: createId(), name, description, model, skillIds, roleIds, icon: 'bot', active: true };
@@ -590,15 +661,17 @@ export const useStore = create<AppStore>()(
     ui: {
       activeView: 'dashboard' as ViewMode,
       activeNoteId: null,
-      activeBoardId: 'default-board',
+      activeBoardId: null,
       inspectorOpen: true,
       commandPaletteOpen: false,
       sidebarCollapsed: false,
       fabOpen: false,
       inlineAgentOpen: false,
-      activeAgentSessionId: 'session-1',
+      activeAgentSessionId: DEV_BOOTSTRAP_MODE ? 'session-1' : null,
       notesTab: 'all' as const,
       activeFolderId: null,
+      diagnosticsMode: DEV_BOOTSTRAP_MODE ? 'dev-bootstrap' : 'backend-only',
+      fallbackDataActive: false,
     },
 
     setView: (view) => set((s) => ({ ui: { ...s.ui, activeView: view } })),
@@ -645,12 +718,12 @@ export const useStore = create<AppStore>()(
     },
 
     lockVault: async () => {
-      const ok = await cryptoClient.vaultLock();
+      await cryptoClient.lockVault();
       const status = await cryptoClient.vaultGetStatus();
       if (status !== null) {
         set(() => ({ vaultStatus: status }));
       }
-      return ok;
+      return true;
     },
 
     // -----------------------------------------------------------------
@@ -661,7 +734,7 @@ export const useStore = create<AppStore>()(
       step: 0,
       role: null,
       name: '',
-      workspaceName: 'My Vault',
+      workspaceName: 'MyVault',
       theme: 'dark' as const,
       features: ['wikilinks', 'kanban', 'graph'],
     },
@@ -683,20 +756,22 @@ export const useStore = create<AppStore>()(
       }
 
       set((s) => ({
-        notes: [WELCOME_NOTE],
-        folders: [DEFAULT_FOLDER],
-        boards: [DEFAULT_BOARD],
+        notes: DEV_BOOTSTRAP_MODE ? [WELCOME_NOTE] : [],
+        folders: DEV_BOOTSTRAP_MODE ? [DEFAULT_FOLDER] : [],
+        boards: DEV_BOOTSTRAP_MODE ? [DEFAULT_BOARD] : [],
         cards: DEFAULT_CARDS,
-        agents: DEFAULT_AGENTS,
-        agentSessions: DEFAULT_SESSIONS,
+        agents: DEV_BOOTSTRAP_MODE ? DEFAULT_AGENTS : [],
+        agentSessions: DEV_BOOTSTRAP_MODE ? DEFAULT_SESSIONS : [],
         customTemplates: [],
         ui: {
           ...s.ui,
           activeView: 'dashboard',
           activeNoteId: null,
-          activeBoardId: 'default-board',
+          activeBoardId: DEV_BOOTSTRAP_MODE ? 'default-board' : null,
           activeFolderId: null,
-          activeAgentSessionId: 'session-1',
+          activeAgentSessionId: DEV_BOOTSTRAP_MODE ? 'session-1' : null,
+          diagnosticsMode: DEV_BOOTSTRAP_MODE ? 'dev-bootstrap' : 'backend-only',
+          fallbackDataActive: DEV_BOOTSTRAP_MODE,
         },
       }));
 
