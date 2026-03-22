@@ -11,6 +11,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "audit:frontend-rules": "bash scripts/audit-frontend-rules.sh",
+    "audit:model-downloads": "bash scripts/audit-model-downloads.sh",
+    "audit:all": "npm run audit:frontend-rules && npm run audit:model-downloads",
     "deploy": "bun run build && npx wrangler deploy --config wrangler.jsonc",
     "deploy:dry": "bun run build && npx wrangler deploy --dry-run --config wrangler.jsonc",
     "preview:worker": "bun run build && npx wrangler dev --config wrangler.jsonc"
