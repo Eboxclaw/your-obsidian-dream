@@ -446,7 +446,7 @@ export const useStore = create<AppStore>()(
         role: null,
         name: '',
         workspaceName: 'My Vault',
-        theme: 'dark' as const,
+        theme: 'light' as const,
         features: ['wikilinks', 'kanban', 'graph'],
       },
 
