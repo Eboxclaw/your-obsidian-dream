@@ -111,7 +111,7 @@ export interface OnboardingState {
   role: UserRole | null;
   name: string;
   workspaceName: string;
-  theme: 'dark' | 'midnight' | 'abyss';
+  theme: 'light' | 'dark' | 'midnight' | 'abyss';
   features: string[];
 }
 
