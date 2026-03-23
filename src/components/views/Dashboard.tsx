@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useStore } from '@/store';
 import { format } from 'date-fns';
-import { FileText, CheckSquare, Bot, GitFork, Sparkles, Shield, ArrowRight } from 'lucide-react';
+import { FileText, CheckSquare, Bot, GitFork, ArrowRight } from 'lucide-react';
 import {
   forceSimulation,
   forceLink,
@@ -135,7 +135,7 @@ function MiniGraph({ notes }: { notes: { id: string; title: string; content: str
 }
 
 export function Dashboard() {
-  const { notes, boards, cards, agents, skills, roles, setActiveNote, setView, setActiveBoard, onboarding, ui } = useStore();
+  const { notes, boards, cards, agents, setActiveNote, setView, setActiveBoard, onboarding, ui } = useStore();
   const [tab, setTab] = useState<'notes' | 'tasks'>('notes');
 
   const folderNotes = ui.activeFolderId ? notes.filter((n) => n.folderId === ui.activeFolderId) : notes;
@@ -149,7 +149,7 @@ export function Dashboard() {
     const board = boards.find((b) => b.id === c.boardId);
     if (!board) return false;
     const doneCol = board.columns.find((col) => col.title.toLowerCase() === 'done');
-    return doneCol?.cardIds.includes(c.id);
+    return doneCol && doneCol.cardIds.includes(c.id);
   }).length;
   const pendingTasks = totalTasks - doneTasks;
   const activeAgents = agents.filter((a) => a.active).length;
@@ -193,14 +193,12 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Stats row — 5 metrics */}
-      <div className="grid grid-cols-5 gap-2">
+      {/* Stats row — 3 metrics */}
+      <div className="grid grid-cols-3 gap-2">
         {[
           { icon: FileText, value: folderNotes.length, label: 'Notes' },
           { icon: CheckSquare, value: totalTasks, label: 'Tasks' },
           { icon: Bot, value: activeAgents, label: 'Agents' },
-          { icon: Sparkles, value: skills.length, label: 'Skills' },
-          { icon: Shield, value: roles.length, label: 'Roles' },
         ].map(({ icon: Icon, value, label }) => (
           <div key={label} className="rounded-2xl border bg-card p-2 sm:p-3 text-center ghost-card">
             <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mx-auto text-muted-foreground mb-0.5" />

@@ -23,6 +23,9 @@ export function FABMenu() {
   const [step, setStep] = useState<Step>('menu');
   const [newFolderName, setNewFolderName] = useState('');
 
+  // FAB shifts up when inline agent is expanded
+  const fabBottom = ui.inlineAgentOpen ? 'bottom-[calc(50vh+1rem)]' : 'bottom-[7.5rem]';
+
   const handleCreate = (type: string) => {
     if (type === 'note') { setStep('template'); return; }
     if (type === 'task') {
@@ -73,10 +76,10 @@ export function FABMenu() {
 
   return (
     <>
-      {/* FAB Button — fixed bottom-LEFT corner */}
+      {/* FAB Button — shifts up when inline chat is expanded */}
       <button
         onClick={ui.fabOpen ? handleClose : toggleFab}
-        className={`fixed bottom-[7.5rem] right-5 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-lg aether-transition ${
+        className={`fixed ${fabBottom} right-5 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-lg aether-transition transition-all duration-300 ${
           ui.fabOpen
             ? 'bg-muted text-foreground rotate-45'
             : 'bg-accent text-accent-foreground'
