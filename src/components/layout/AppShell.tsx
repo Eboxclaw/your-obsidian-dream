@@ -15,7 +15,7 @@ import { InlineAgent } from '@/components/layout/InlineAgent';
 import { FolderSwitcher } from '@/components/layout/FolderSwitcher';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { Search } from 'lucide-react';
-import logoSvg from '@/assets/logo.svg';
+
 
 const VIEWS_WITH_FOLDER_SWITCHER: string[] = ['dashboard', 'notebook', 'kanban', 'agent'];
 
