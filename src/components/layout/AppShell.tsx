@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/store';
-import { Fingerprint } from 'lucide-react';
+import { Fingerprint, Shield } from 'lucide-react';
 import { Dashboard } from '@/components/views/Dashboard';
 import { Notebook } from '@/components/views/Notebook';
 import { KanbanView } from '@/components/views/KanbanView';

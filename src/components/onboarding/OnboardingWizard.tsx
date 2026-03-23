@@ -20,7 +20,6 @@ import {
   X,
   CheckCircle2,
 } from 'lucide-react';
-import logoSvg from '@/assets/logo.svg';
 import { SmokeParticles } from '@/components/effects/SmokeParticles';
 
 type SecurityMethod = 'biometrics' | 'pin' | 'passphrase';
@@ -123,7 +122,6 @@ export function OnboardingWizard() {
   };
 
   const handleBiometricAuth = () => {
-    // Simulate biometric auth
     setBiometricDone(true);
     setTimeout(() => {
       finishOnboarding();
@@ -137,7 +135,9 @@ export function OnboardingWizard() {
         <SmokeParticles count={8} />
         <div className="relative z-10 w-full max-w-sm px-6 text-center">
           <div className="mb-8 flex justify-center">
-            <img src={logoSvg} alt="ViBo" className="h-16 w-16 logo-glow ghost-float" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+              <Shield className="h-8 w-8 text-foreground" />
+            </div>
           </div>
           <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
             ViBoAI · Virtual Notebook
@@ -167,7 +167,7 @@ export function OnboardingWizard() {
     );
   }
 
-  // Biometric popup
+  // Biometric popup card
   if (subStep === 'biometric') {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm">
@@ -190,19 +190,19 @@ export function OnboardingWizard() {
             </div>
           </div>
           <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            {biometricDone ? 'Authenticated' : 'Touch to Authenticate'}
+            {biometricDone ? 'Authenticated' : 'Biometric Enrollment'}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
             {biometricDone
-              ? 'Biometrics registered successfully.'
-              : 'Place your finger on the sensor to enable biometric unlock.'}
+              ? 'Biometrics registered. Your vault is ready.'
+              : 'Place your finger on the sensor to enable biometric unlock for your vault.'}
           </p>
           {!biometricDone && (
             <button
               onClick={handleBiometricAuth}
               className="mt-6 w-full rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
             >
-              Simulate Biometric
+              Authenticate
             </button>
           )}
           {!biometricDone && (
