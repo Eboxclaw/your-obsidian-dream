@@ -1,3 +1,0 @@
-# ViBo API
-
-TBD.

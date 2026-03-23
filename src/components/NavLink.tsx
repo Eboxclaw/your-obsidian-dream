@@ -1,39 +1,28 @@
-import { forwardRef, type MouseEventHandler, type ReactNode } from 'react';
-import { cn } from '@/lib/utils';
-import { useStore } from '@/lib/store';
-import type { ViewMode } from '@/lib/types';
+import { NavLink as RouterNavLink, NavLinkProps } from "react-router-dom";
+import { forwardRef } from "react";
+import { cn } from "@/lib/utils";
 
-interface NavLinkCompatProps {
+interface NavLinkCompatProps extends Omit<NavLinkProps, "className"> {
   className?: string;
   activeClassName?: string;
-  to: ViewMode;
-  children: ReactNode;
-  onClick?: MouseEventHandler<HTMLButtonElement>;
+  pendingClassName?: string;
 }
 
-const NavLink = forwardRef<HTMLButtonElement, NavLinkCompatProps>(
-  ({ className, activeClassName, to, children, onClick }, ref) => {
-    const { ui, navigate } = useStore();
-    const isActive = ui.activeView === to;
-
+const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
+  ({ className, activeClassName, pendingClassName, to, ...props }, ref) => {
     return (
-      <button
+      <RouterNavLink
         ref={ref}
-        type="button"
-        className={cn(className, isActive && activeClassName)}
-        onClick={(event) => {
-          navigate(to);
-          if (onClick) {
-            onClick(event);
-          }
-        }}
-      >
-        {children}
-      </button>
+        to={to}
+        className={({ isActive, isPending }) =>
+          cn(className, isActive && activeClassName, isPending && pendingClassName)
+        }
+        {...props}
+      />
     );
   },
 );
 
-NavLink.displayName = 'NavLink';
+NavLink.displayName = "NavLink";
 
 export { NavLink };

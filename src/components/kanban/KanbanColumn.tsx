@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useStore } from '@/lib/store';
+import { useStore } from '@/store';
 import { KanbanCardComponent } from '@/components/kanban/KanbanCard';
-import type { KanbanColumn, KanbanCard } from '@/lib/types';
+import type { KanbanColumn, KanbanCard } from '@/types';
 import { MoreHorizontal, Plus, Trash2 } from 'lucide-react';
 
 interface Props {
@@ -26,9 +26,9 @@ export function KanbanColumnComponent({ column, boardId, cards }: Props) {
     .map((id) => cards.find((c) => c.id === id))
     .filter(Boolean) as KanbanCard[];
 
-  const handleAddCard = async () => {
+  const handleAddCard = () => {
     if (newCardTitle.trim()) {
-      await addCard(boardId, column.id, newCardTitle.trim());
+      addCard(boardId, column.id, newCardTitle.trim());
       setNewCardTitle('');
       setShowNewCard(false);
     }

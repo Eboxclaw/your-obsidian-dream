@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore } from '@/lib/store';
+import { useStore } from '@/store';
 import { Plus, Search, Trash2 } from 'lucide-react';
 
 export function FileSidebar() {
@@ -12,11 +12,9 @@ export function FileSidebar() {
     .filter((n) => n.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime());
 
-  const handleNew = async () => {
-    const note = await addNote('Untitled');
-    if (note) {
-      setActiveNote(note.id);
-    }
+  const handleNew = () => {
+    const note = addNote('Untitled');
+    setActiveNote(note.id);
   };
 
   return (
@@ -64,7 +62,7 @@ export function FileSidebar() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  void deleteNote(note.id);
+                  deleteNote(note.id);
                 }}
                 className="flex h-5 w-5 items-center justify-center rounded-sm text-muted-foreground hover:text-destructive"
               >

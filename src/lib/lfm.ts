@@ -1,71 +1,95 @@
-import { invoke } from '@tauri-apps/api/core';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+/**
+ * lfm.ts — LFM (Liquid Foundation Model) streaming interface.
+ *
+ * All LLM communication happens through Tauri events.
+ * providers.rs handles the actual HTTP calls to model providers.
+ * This file ONLY listens to Tauri events — no fetch(), no API keys.
+ */
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 export interface LLMStreamCallbacks {
   onDelta: (token: string) => void;
-  onDone: () => void;
+  onDone: (fullText: string) => void;
   onError: (error: string) => void;
 }
 
-export async function loadModel(model: string): Promise<string> {
-  return invoke<string>('load_model', { model });
+interface UnlistenFn {
+  (): void;
 }
 
-export async function downloadModel(model: string): Promise<string> {
-  return invoke<string>('download_model', { model });
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+let tauriAvailable: boolean | null = null;
+
+async function isTauri(): Promise<boolean> {
+  if (tauriAvailable !== null) return tauriAvailable;
+  try {
+    const mod = await import('@tauri-apps/api/event');
+    tauriAvailable = typeof mod.listen === 'function';
+  } catch {
+    tauriAvailable = false;
+  }
+  return tauriAvailable;
 }
 
-export async function createConversation(
-  modelId: string,
-  systemPrompt: string | null
-): Promise<string> {
-  return invoke<string>('create_conversation', {
-    modelId,
-    systemPrompt: systemPrompt !== null && systemPrompt !== undefined ? systemPrompt : null,
+// ---------------------------------------------------------------------------
+// Stream listener — subscribe to llm-delta / llm-done / llm-error
+// ---------------------------------------------------------------------------
+
+export async function subscribeLLMStream(callbacks: LLMStreamCallbacks): Promise<UnlistenFn> {
+  if (!(await isTauri())) {
+    // Return a no-op unlisten when not in Tauri
+    return () => {};
+  }
+
+  const { listen } = await import('@tauri-apps/api/event');
+  const unlisteners: UnlistenFn[] = [];
+
+  const u1 = await listen<string>('llm-delta', (e) => {
+    callbacks.onDelta(e.payload);
   });
-}
+  unlisteners.push(u1);
 
-export async function generateText(
-  conversationId: string,
-  message: string
-): Promise<string> {
-  return invoke<string>('generate_text', { conversationId, message });
-}
-
-export async function stopGeneration(generationId: string): Promise<void> {
-  return invoke<void>('stop_generation', { generationId });
-}
-
-export async function onToken(handler: (token: string) => void): Promise<UnlistenFn> {
-  return listen<string>('llm-delta', (event) => {
-    handler(event.payload);
+  const u2 = await listen<string>('llm-done', (e) => {
+    callbacks.onDone(e.payload);
   });
-}
+  unlisteners.push(u2);
 
-export async function onDone(handler: () => void): Promise<UnlistenFn> {
-  return listen('llm-done', () => {
-    handler();
+  const u3 = await listen<string>('llm-error', (e) => {
+    callbacks.onError(e.payload);
   });
-}
-
-export async function onError(handler: (error: string) => void): Promise<UnlistenFn> {
-  return listen<string>('llm-error', (event) => {
-    handler(event.payload);
-  });
-}
-
-export async function useStream(callbacks: LLMStreamCallbacks): Promise<UnlistenFn> {
-  const unlistenToken = await onToken(callbacks.onDelta);
-  const unlistenDone = await onDone(callbacks.onDone);
-  const unlistenError = await onError(callbacks.onError);
+  unlisteners.push(u3);
 
   return () => {
-    unlistenToken();
-    unlistenDone();
-    unlistenError();
+    unlisteners.forEach((fn) => fn());
   };
 }
 
-export async function listenToProviderStream(callbacks: LLMStreamCallbacks): Promise<UnlistenFn> {
-  return useStream(callbacks);
+// ---------------------------------------------------------------------------
+// Prompt — send a prompt to the loaded LFM model via invoke()
+// ---------------------------------------------------------------------------
+
+export async function sendPrompt(
+  sessionId: string,
+  prompt: string,
+  modelId: string
+): Promise<boolean> {
+  if (!(await isTauri())) return false;
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke<boolean>('llm_prompt', { sessionId, prompt, modelId });
+}
+
+// ---------------------------------------------------------------------------
+// Cancel — abort an in-flight generation
+// ---------------------------------------------------------------------------
+
+export async function cancelGeneration(sessionId: string): Promise<boolean> {
+  if (!(await isTauri())) return false;
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke<boolean>('llm_cancel', { sessionId });
 }

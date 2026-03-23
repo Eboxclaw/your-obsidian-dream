@@ -8,7 +8,7 @@ import {
   type SimulationNodeDatum,
   type SimulationLinkDatum,
 } from 'd3-force';
-import { useStore } from '@/lib/store';
+import { useStore } from '@/store';
 import { ZoomIn, ZoomOut, Filter, X } from 'lucide-react';
 
 interface GraphNode extends SimulationNodeDatum {
@@ -213,7 +213,7 @@ export function GraphView() {
     nodesRef.current.forEach((node) => {
       if (node.x == null || node.y == null) return;
       const radius = Math.max(3, Math.min(8, 3 + node.linkCount * 1.5));
-      const isHovered = hoveredNode && hoveredNode.id === node.id;
+      const isHovered = hoveredNode?.id === node.id;
       const isTask = node.type === 'task';
 
       // Track folder positions for magnet labels
@@ -297,7 +297,7 @@ export function GraphView() {
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      const rect = canvasRef.current && canvasRef.current.getBoundingClientRect();
+      const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
@@ -305,9 +305,7 @@ export function GraphView() {
         const node = dragRef.current.node;
         node.fx = (cx - transform.x) / transform.k;
         node.fy = (cy - transform.y) / transform.k;
-        if (simRef.current) {
-          simRef.current.alpha(0.3).restart();
-        }
+        simRef.current?.alpha(0.3).restart();
         return;
       }
       const node = getNodeAt(cx, cy);
@@ -319,7 +317,7 @@ export function GraphView() {
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      const rect = canvasRef.current && canvasRef.current.getBoundingClientRect();
+      const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
@@ -343,7 +341,7 @@ export function GraphView() {
 
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {
-      const rect = canvasRef.current && canvasRef.current.getBoundingClientRect();
+      const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
       const node = getNodeAt(e.clientX - rect.left, e.clientY - rect.top);
       if (node) { setActiveNote(node.id); setView('notebook'); }
@@ -354,7 +352,7 @@ export function GraphView() {
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const scaleFactor = e.deltaY > 0 ? 0.95 : 1.05;
-    const rect = canvasRef.current && canvasRef.current.getBoundingClientRect();
+    const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
@@ -381,16 +379,14 @@ export function GraphView() {
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
       if (!dragRef.current || !e.touches[0]) return;
-      const rect = canvasRef.current && canvasRef.current.getBoundingClientRect();
+      const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
       const cx = e.touches[0].clientX - rect.left;
       const cy = e.touches[0].clientY - rect.top;
       const node = dragRef.current.node;
       node.fx = (cx - transform.x) / transform.k;
       node.fy = (cy - transform.y) / transform.k;
-      if (simRef.current) {
-        simRef.current.alpha(0.3).restart();
-      }
+      simRef.current?.alpha(0.3).restart();
     },
     [transform]
   );
@@ -398,7 +394,7 @@ export function GraphView() {
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
       if (!e.touches[0]) return;
-      const rect = canvasRef.current && canvasRef.current.getBoundingClientRect();
+      const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
       const cx = e.touches[0].clientX - rect.left;
       const cy = e.touches[0].clientY - rect.top;

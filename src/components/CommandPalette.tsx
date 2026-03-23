@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useStore } from '@/lib/store';
+import { useStore } from '@/store';
 import { Search, FileText, LayoutDashboard, BookOpen, Columns3, Plus, GitFork, Bot, FileStack, Settings } from 'lucide-react';
 
 export function CommandPalette() {
@@ -35,22 +35,7 @@ export function CommandPalette() {
     { id: 'nav-templates', label: 'Templates', sublabel: 'Navigate', icon: FileStack, action: () => { setView('templates'); toggleCommandPalette(); } },
     { id: 'nav-agent', label: 'Agent', sublabel: 'Navigate', icon: Bot, action: () => { setView('agent'); toggleCommandPalette(); } },
     { id: 'nav-settings', label: 'Settings', sublabel: 'Navigate', icon: Settings, action: () => { setView('settings'); toggleCommandPalette(); } },
-    {
-      id: 'new-note',
-      label: 'New Note',
-      sublabel: 'Action',
-      icon: Plus,
-      action: () => {
-        void (async () => {
-          const n = await addNote('Untitled');
-          if (n) {
-            setActiveNote(n.id);
-            setView('notebook');
-            toggleCommandPalette();
-          }
-        })();
-      },
-    },
+    { id: 'new-note', label: 'New Note', sublabel: 'Action', icon: Plus, action: () => { const n = addNote('Untitled'); setActiveNote(n.id); setView('notebook'); toggleCommandPalette(); } },
   );
 
   // Notes
@@ -69,7 +54,7 @@ export function CommandPalette() {
     : actions;
 
   useEffect(() => {
-    if (inputRef.current) inputRef.current.focus();
+    inputRef.current?.focus();
   }, []);
 
   useEffect(() => {

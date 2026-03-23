@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore } from '@/lib/store';
+import { useStore } from '@/store';
 import { FolderOpen, ChevronDown, Plus, Check } from 'lucide-react';
 
 export function FolderSwitcher() {
@@ -9,17 +9,15 @@ export function FolderSwitcher() {
   const [newName, setNewName] = useState('');
 
   const activeFolder = folders.find((f) => f.id === ui.activeFolderId);
-  const label = activeFolder ? activeFolder.name : 'All Folders';
+  const label = activeFolder?.name || 'All Folders';
 
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (newName.trim()) {
-      const folder = await addFolder(newName.trim());
-      if (folder) {
-        setActiveFolder(folder.id);
-        setNewName('');
-        setCreating(false);
-        setOpen(false);
-      }
+      const folder = addFolder(newName.trim());
+      setActiveFolder(folder.id);
+      setNewName('');
+      setCreating(false);
+      setOpen(false);
     }
   };
 

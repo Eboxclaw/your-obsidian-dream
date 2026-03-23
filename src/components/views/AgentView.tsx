@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useStore } from '@/lib/store';
-import { Bot, Plus, Users, X, Pencil, Trash2, Check } from 'lucide-react';
+import { useStore } from '@/store';
+import { Bot, Plus, Zap, Users, X, Pencil, Trash2, ChevronDown, Check } from 'lucide-react';
 
-type AgentTab = 'agents' | 'roles';
+type AgentTab = 'agents' | 'skills' | 'roles';
 
-const MODELS = ['LFM2-350M-Extract', 'lfm-instruct', 'lfm-thinking'];
+const MODELS = ['gpt-4o', 'gpt-4o-mini', 'claude-3.5-sonnet', 'gemini-pro', 'llama-3', 'mistral-large'];
 
 export function AgentView() {
-  const { agents, roles, addAgent, updateAgent, toggleAgent, removeAgent, addRole, removeRole } = useStore();
+  const { agents, skills, roles, addAgent, updateAgent, toggleAgent, removeAgent, addSkill, removeSkill, addRole, removeRole } = useStore();
   const [tab, setTab] = useState<AgentTab>('agents');
 
   // New / Edit agent form
@@ -16,10 +16,14 @@ export function AgentView() {
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [model, setModel] = useState(MODELS[0]);
+  const [selSkills, setSelSkills] = useState<string[]>([]);
   const [selRoles, setSelRoles] = useState<string[]>([]);
 
-  // Roles inline add
+  // Skills / Roles inline add
+  const [showNewSkill, setShowNewSkill] = useState(false);
   const [showNewRole, setShowNewRole] = useState(false);
+  const [skillName, setSkillName] = useState('');
+  const [skillDesc, setSkillDesc] = useState('');
   const [roleName, setRoleName] = useState('');
   const [roleDesc, setRoleDesc] = useState('');
 
@@ -28,6 +32,7 @@ export function AgentView() {
     setName('');
     setDesc('');
     setModel(MODELS[0]);
+    setSelSkills([]);
     setSelRoles([]);
     setShowForm(true);
   };
@@ -37,6 +42,7 @@ export function AgentView() {
     setName(a.name);
     setDesc(a.description);
     setModel(a.model || MODELS[0]);
+    setSelSkills(a.skillIds || []);
     setSelRoles(a.roleIds || []);
     setShowForm(true);
   };
@@ -44,15 +50,26 @@ export function AgentView() {
   const handleSave = () => {
     if (!name.trim()) return;
     if (editId) {
-      updateAgent(editId, { name: name.trim(), description: desc.trim(), model, skillIds: [], roleIds: selRoles });
+      updateAgent(editId, { name: name.trim(), description: desc.trim(), model, skillIds: selSkills, roleIds: selRoles });
     } else {
-      addAgent(name.trim(), desc.trim(), model, [], selRoles);
+      addAgent(name.trim(), desc.trim(), model, selSkills, selRoles);
     }
     setShowForm(false);
   };
 
+  const toggleSkillSel = (id: string) =>
+    setSelSkills((p) => (p.includes(id) ? p.filter((s) => s !== id) : [...p, id]));
   const toggleRoleSel = (id: string) =>
     setSelRoles((p) => (p.includes(id) ? p.filter((r) => r !== id) : [...p, id]));
+
+  const handleAddSkill = () => {
+    if (skillName.trim()) {
+      addSkill(skillName.trim(), skillDesc.trim());
+      setSkillName('');
+      setSkillDesc('');
+      setShowNewSkill(false);
+    }
+  };
 
   const handleAddRole = () => {
     if (roleName.trim()) {
@@ -65,6 +82,7 @@ export function AgentView() {
 
   const tabs: { id: AgentTab; label: string; icon: typeof Bot }[] = [
     { id: 'agents', label: 'Agents', icon: Bot },
+    { id: 'skills', label: 'Skills', icon: Zap },
     { id: 'roles', label: 'Roles', icon: Users },
   ];
 
@@ -101,7 +119,7 @@ export function AgentView() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{agent.name}</p>
                   <p className="text-[10px] text-muted-foreground truncate">{agent.description}</p>
-                  <p className="text-[10px] text-muted-foreground/60 mt-0.5">{agent.model || 'LFM2-350M-Extract'}</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-0.5">{agent.model || 'gpt-4o'}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -184,6 +202,31 @@ export function AgentView() {
               </div>
             </div>
 
+            {/* Skills multi-select */}
+            <div>
+              <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Skills</label>
+              {skills.length === 0 ? (
+                <p className="text-[10px] text-muted-foreground/60">No skills defined yet. Add some in the Skills tab.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {skills.map((sk) => (
+                    <button
+                      key={sk.id}
+                      onClick={() => toggleSkillSel(sk.id)}
+                      className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium border aether-transition ${
+                        selSkills.includes(sk.id)
+                          ? 'bg-primary/10 text-primary border-primary/30'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {selSkills.includes(sk.id) && <Check className="h-3 w-3" />}
+                      {sk.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Roles multi-select */}
             <div>
               <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Roles</label>
@@ -217,6 +260,42 @@ export function AgentView() {
                 Cancel
               </button>
             </div>
+          </div>
+        )}
+
+        {/* ===== SKILLS TAB ===== */}
+        {tab === 'skills' && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">Define what your agents can do</p>
+            {skills.map((skill) => (
+              <div key={skill.id} className="flex items-center gap-3 rounded-2xl border bg-card p-4 group">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{skill.name}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{skill.description}</p>
+                </div>
+                <button
+                  onClick={() => removeSkill(skill.id)}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 aether-transition"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            {showNewSkill ? (
+              <div className="rounded-2xl border border-dashed p-4 space-y-2">
+                <input value={skillName} onChange={(e) => setSkillName(e.target.value)} placeholder="Skill name" className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-primary" autoFocus />
+                <input value={skillDesc} onChange={(e) => setSkillDesc(e.target.value)} placeholder="Description" className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
+                <div className="flex gap-2">
+                  <button onClick={handleAddSkill} className="rounded-lg bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground">Add</button>
+                  <button onClick={() => setShowNewSkill(false)} className="text-xs text-muted-foreground">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setShowNewSkill(true)} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed p-4 text-xs text-muted-foreground hover:text-foreground hover:border-primary aether-transition">
+                <Plus className="h-4 w-4" />
+                Add Skill
+              </button>
+            )}
           </div>
         )}
 

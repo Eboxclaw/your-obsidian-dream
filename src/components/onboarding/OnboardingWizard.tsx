@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useStore } from '@/lib/store';
-import type { UserRole } from '@/lib/types';
+import { useState } from 'react';
+import { useStore } from '@/store';
+import type { UserRole } from '@/types';
 import {
   ChevronRight,
   ChevronLeft,
@@ -20,10 +20,8 @@ import {
   X,
   CheckCircle2,
 } from 'lucide-react';
+import logoSvg from '@/assets/logo.svg';
 import { SmokeParticles } from '@/components/effects/SmokeParticles';
-import { keystoreSet, vaultInit } from '@/lib/crypto';
-import { oauthStart } from '@/lib/tauriClient';
-import { agentMemorySet, downloadModel } from '@/lib/leapClient';
 
 type SecurityMethod = 'biometrics' | 'pin' | 'passphrase';
 type AgentPreset = 'manager' | 'assistant' | 'code' | 'writer';
@@ -40,7 +38,7 @@ const INTEGRATIONS = [
 
 const SECURITY_OPTIONS: { id: SecurityMethod; name: string; desc: string; icon: typeof Fingerprint }[] = [
   { id: 'biometrics', name: 'Biometrics', desc: 'Face ID / Fingerprint', icon: Fingerprint },
-  { id: 'pin', name: 'Password', desc: 'Secure password', icon: KeyRound },
+  { id: 'pin', name: 'Numeric PIN', desc: '4-6 digit code', icon: KeyRound },
   { id: 'passphrase', name: 'Passphrase', desc: 'Word-based password', icon: Shield },
 ];
 
@@ -51,10 +49,10 @@ const AGENT_PRESETS: { id: AgentPreset; name: string; desc: string; icon: typeof
   { id: 'writer', name: 'Content Writer', desc: 'Writing, editing, and summarizing', icon: PenTool, emoji: '✍️' },
 ];
 
-type SubStep = 'name' | 'credential' | 'credential-confirm' | 'oauth';
+type SubStep = 'name' | 'pin' | 'pin-confirm' | 'biometric';
 
 export function OnboardingWizard() {
-  const { setOnboarding, completeOnboarding, unlockWithBiometric } = useStore();
+  const { setOnboarding, completeOnboarding } = useStore();
   const [step, setStep] = useState(0);
 
   // Step data
@@ -63,42 +61,17 @@ export function OnboardingWizard() {
   const [security, setSecurity] = useState<SecurityMethod>('biometrics');
   const [agent, setAgent] = useState<AgentPreset>('assistant');
   const [name, setName] = useState('');
-  const [credential, setCredential] = useState('');
-  const [credentialConfirm, setCredentialConfirm] = useState('');
-  const [validatedCredential, setValidatedCredential] = useState('');
+  const [pin, setPin] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [subStep, setSubStep] = useState<SubStep | null>(null);
-  const [credentialError, setCredentialError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [setupError, setSetupError] = useState('');
-  const [setupStatus, setSetupStatus] = useState('');
+  const [pinError, setPinError] = useState('');
   const [biometricDone, setBiometricDone] = useState(false);
-  const [defaultProviderKey, setDefaultProviderKey] = useState('');
-  const [openAiProviderKey, setOpenAiProviderKey] = useState('');
-  const [anthropicProviderKey, setAnthropicProviderKey] = useState('');
 
   const totalSteps = 5;
 
-  const getCredentialLabel = () => {
-    if (security === 'passphrase') {
-      return 'passphrase';
-    }
-    return 'password';
-  };
-
-  const getCredentialTitle = () => {
-    if (security === 'passphrase') {
-      return 'Set up your passphrase';
-    }
-    return 'Set up your password';
-  };
-
   const toggleIntegration = (id: string) => {
     setIntegrations((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const hasActiveIntegration = () => {
-    return Object.values(integrations).some((v) => v);
   };
 
   const canProceed = () => {
@@ -106,156 +79,55 @@ export function OnboardingWizard() {
     return true;
   };
 
-  const finishOnboarding = async () => {
-    if (pin.trim().length === 0 || !isPinConfirmed) {
-      setSetupStatus('');
-      setSetupError('Pass key confirmation is required before onboarding can complete.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setSetupError('');
-    setSetupStatus('Preparing secure onboarding...');
-
-    const waitWithStatus = async (statusText: string, delayMs: number) => {
-      setSetupStatus(statusText);
-      await new Promise<void>((resolve) => {
-        window.setTimeout(() => resolve(), delayMs);
-      });
-    };
-
-    const runStep = async (stepLabel: string, fn: () => Promise<void>) => {
-      try {
-        await fn();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : `${stepLabel} failed.`;
-        const failMessage = `${stepLabel} failed: ${message}`;
-        setSetupStatus(failMessage);
-        setSetupError(failMessage);
-        throw err;
-      }
-    };
-
-    try {
-      await runStep('Provider key setup', async () => {
-        await waitWithStatus('🔒 Scrubbing personal data...', 350);
-
-        const providerEntries = [
-          { key: 'provider.default.api_key', value: defaultProviderKey.trim() },
-          { key: 'provider.openai.api_key', value: openAiProviderKey.trim() },
-          { key: 'provider.anthropic.api_key', value: anthropicProviderKey.trim() },
-        ];
-
-        for (const entry of providerEntries) {
-          if (entry.value.length === 0) {
-            continue;
-          }
-
-          const stored = await keystoreSet(entry.key, entry.value);
-          if (!stored) {
-            throw new Error(`Unable to store ${entry.key}.`);
-          }
-        }
-      });
-
-      await runStep('Google OAuth kickoff', async () => {
-        await waitWithStatus('🧅 Routing privately...', 350);
-        await oauthStart('google');
-      });
-
-      await runStep('Vault setup', async () => {
-        await waitWithStatus('Configuring encrypted vault...', 300);
-        if (validatedCredential.length < 4) {
-          throw new Error(`A valid ${getCredentialLabel()} is required before vault setup.`);
-        }
-
-        const initialized = await vaultInit(validatedCredential);
-        if (!initialized) {
-          throw new Error(`vaultInit(${getCredentialLabel()}) returned false.`);
-        }
-
-        if (security === 'biometrics') {
-          await waitWithStatus('Registering biometric unlock...', 300);
-          const unlocked = await unlockWithBiometric();
-          if (!unlocked) {
-            throw new Error('unlockWithBiometric() returned false.');
-          }
-        }
-      });
-
-      await runStep('Agent setup', async () => {
-        await waitWithStatus('🤖 Thinking locally...', 350);
-        const memorySet = await agentMemorySet('onboarding', `role=${agent};workspace=My Vault`);
-        if (!memorySet) {
-          throw new Error('Unable to configure agent memory.');
-        }
-      });
-
-      await runStep('Model download', async () => {
-        await waitWithStatus('⬇️ Downloading model...', 500);
-        const downloaded = await downloadModel(selectedModel);
-        if (!downloaded) {
-          throw new Error('Model download did not complete.');
-        }
-      });
-
-      setSetupStatus('Setup complete. Opening your workspace...');
-
-      setOnboarding({
-        name,
-        role: 'general' as UserRole,
-        workspaceName: 'MyVault',
-        theme: 'dark',
-        features: ['wikilinks', 'kanban', 'graph', 'ai'],
-      });
-      completeOnboarding();
-    } catch {
-      // Step-level error text is already set in runStep for deterministic QA checks.
-    } finally {
-      setIsSubmitting(false);
-    }
+  const finishOnboarding = () => {
+    setOnboarding({
+      name,
+      role: 'general' as UserRole,
+      workspaceName: 'My Vault',
+      theme: 'dark',
+      features: ['wikilinks', 'kanban', 'graph', 'ai'],
+    });
+    completeOnboarding();
   };
 
   const handleNext = () => {
     if (step === 0) {
       setStep(1);
-    } else if (step === 2) {
-      // If integrations are toggled on, show OAuth card
-      if (hasActiveIntegration()) {
-        setBiometricDone(false);
-        setSubStep('oauth');
-      } else {
-        setStep(3);
-      }
     } else if (step < 5) {
       setStep(step + 1);
     } else if (step === 5 && !subStep) {
-      setCredentialError('');
-      setCredential('');
-      setCredentialConfirm('');
-      setValidatedCredential('');
-      setSubStep('credential');
+      // After name, go to PIN setup
+      setSubStep('pin');
     }
   };
 
-  const handleCredentialNext = () => {
-    if (subStep === 'credential') {
-      if (credential.length < 4) {
-        setCredentialError(`Your ${getCredentialLabel()} must be at least 4 characters.`);
+  const handlePinNext = () => {
+    if (subStep === 'pin') {
+      if (pin.length < 4) return;
+      setPinError('');
+      setSubStep('pin-confirm');
+    } else if (subStep === 'pin-confirm') {
+      if (pinConfirm !== pin) {
+        setPinError('PINs do not match. Try again.');
+        setPinConfirm('');
         return;
       }
-      setCredentialError('');
-      setSubStep('credential-confirm');
-    } else if (subStep === 'credential-confirm') {
-      if (credentialConfirm !== credential) {
-        setCredentialError(`Your ${getCredentialLabel()} entries do not match. Try again.`);
-        setCredentialConfirm('');
-        return;
+      setPinError('');
+      // If biometrics selected, show biometric popup
+      if (security === 'biometrics') {
+        setSubStep('biometric');
+      } else {
+        finishOnboarding();
       }
-      setValidatedCredential(credential);
-      setCredentialError('');
-      void finishOnboarding();
     }
+  };
+
+  const handleBiometricAuth = () => {
+    // Simulate biometric auth
+    setBiometricDone(true);
+    setTimeout(() => {
+      finishOnboarding();
+    }, 1200);
   };
 
   // Welcome splash (step 0)
@@ -264,6 +136,9 @@ export function OnboardingWizard() {
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
         <SmokeParticles count={8} />
         <div className="relative z-10 w-full max-w-sm px-6 text-center">
+          <div className="mb-8 flex justify-center">
+            <img src={logoSvg} alt="ViBo" className="h-16 w-16 logo-glow ghost-float" />
+          </div>
           <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
             ViBoAI · Virtual Notebook
           </p>
@@ -292,43 +167,60 @@ export function OnboardingWizard() {
     );
   }
 
-  // Google OAuth card
-  if (subStep === 'oauth') {
+  // Biometric popup
+  if (subStep === 'biometric') {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm">
         <div className="relative w-full max-w-xs mx-4 rounded-3xl border bg-card p-8 text-center shadow-xl animate-fade-in">
           <button
-            onClick={() => { setBiometricDone(false); setSubStep(null); setStep(3); }}
+            onClick={() => { setSubStep('pin-confirm'); }}
             className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
           <div className="mb-6 flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-              <Mail className="h-7 w-7 text-foreground" />
+            <div className={`flex h-20 w-20 items-center justify-center rounded-full border-2 aether-transition ${
+              biometricDone ? 'border-accent bg-accent/10' : 'border-border bg-muted'
+            }`}>
+              {biometricDone ? (
+                <CheckCircle2 className="h-10 w-10 text-accent" />
+              ) : (
+                <Fingerprint className="h-10 w-10 text-foreground" />
+              )}
             </div>
           </div>
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">Connect to Google</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            {biometricDone ? 'Authenticated' : 'Touch to Authenticate'}
+          </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to sync your calendar and email with ViBo agents.
+            {biometricDone
+              ? 'Biometrics registered successfully.'
+              : 'Place your finger on the sensor to enable biometric unlock.'}
           </p>
-          {setupStatus ? <p className="mt-2 text-xs text-muted-foreground">{setupStatus}</p> : null}
-          {setupError ? <p className="mt-2 text-xs text-destructive">{setupError}</p> : null}
-          <button
-            onClick={() => { setSubStep(null); setStep(3); }}
-            className="mt-6 w-full rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
-          >
-            Continue setup
-          </button>
+          {!biometricDone && (
+            <button
+              onClick={handleBiometricAuth}
+              className="mt-6 w-full rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
+            >
+              Simulate Biometric
+            </button>
+          )}
+          {!biometricDone && (
+            <button
+              onClick={finishOnboarding}
+              className="mt-3 w-full rounded-2xl border py-3 text-sm text-muted-foreground hover:text-foreground aether-transition"
+            >
+              Skip for now
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
-  // Credential setup / confirm sub-steps
-  if (subStep === 'credential' || subStep === 'credential-confirm') {
-    const isConfirm = subStep === 'credential-confirm';
-    const credentialLabel = getCredentialLabel();
+  // PIN setup / confirm sub-steps
+  if (subStep === 'pin' || subStep === 'pin-confirm') {
+    const isConfirm = subStep === 'pin-confirm';
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
         <div className="relative w-full max-w-sm px-6 text-center">
@@ -338,36 +230,26 @@ export function OnboardingWizard() {
             </div>
           </div>
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            {isConfirm ? `Confirm your ${credentialLabel}` : getCredentialTitle()}
+            {isConfirm ? 'Confirm Your PIN' : 'Set Up Encryption'}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {isConfirm
-              ? `Re-enter your ${credentialLabel} to continue`
-              : security === 'biometrics'
-                ? `Biometric unlock also requires a fallback ${credentialLabel}.`
-                : `Create a ${credentialLabel} to encrypt your notes at rest.`}
+            {isConfirm ? 'Re-enter your PIN to confirm' : 'Create a PIN to encrypt your notes at rest'}
           </p>
-          {credentialError && (
-            <p className="mt-2 text-xs text-destructive">{credentialError}</p>
+          {pinError && (
+            <p className="mt-2 text-xs text-destructive">{pinError}</p>
           )}
-          {setupError ? <p className="mt-2 text-xs text-destructive">{setupError}</p> : null}
-          {setupStatus ? <p className="mt-2 text-xs text-muted-foreground">{setupStatus}</p> : null}
           <div className="mt-6 relative">
             <input
               type={showPin ? 'text' : 'password'}
-              value={isConfirm ? credentialConfirm : credential}
+              value={isConfirm ? pinConfirm : pin}
               onChange={(e) => {
-                setCredentialError('');
-                if (isConfirm) {
-                  setCredentialConfirm(e.target.value);
-                } else {
-                  setCredential(e.target.value);
-                }
+                setPinError('');
+                isConfirm ? setPinConfirm(e.target.value) : setPin(e.target.value);
               }}
-              placeholder={isConfirm ? `Confirm ${credentialLabel}...` : `Enter ${credentialLabel}...`}
+              placeholder={isConfirm ? 'Confirm PIN...' : 'Enter PIN...'}
               className="w-full rounded-2xl border bg-muted px-4 py-4 text-center text-sm outline-none focus:border-foreground/30 aether-transition pr-12"
               autoFocus
-              onKeyDown={(e) => e.key === 'Enter' && handleCredentialNext()}
+              onKeyDown={(e) => e.key === 'Enter' && handlePinNext()}
             />
             <button
               onClick={() => setShowPin(!showPin)}
@@ -379,10 +261,10 @@ export function OnboardingWizard() {
           <div className="mt-4 flex gap-3">
             <button
               onClick={() => {
-                setCredentialError('');
+                setPinError('');
                 if (isConfirm) {
-                  setCredentialConfirm('');
-                  setSubStep('credential');
+                  setPinConfirm('');
+                  setSubStep('pin');
                 } else {
                   setSubStep(null);
                 }
@@ -392,16 +274,16 @@ export function OnboardingWizard() {
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
-              onClick={handleCredentialNext}
-              disabled={(isConfirm ? credentialConfirm.length < 4 : credential.length < 4) || isSubmitting}
+              onClick={handlePinNext}
+              disabled={isConfirm ? pinConfirm.length < 4 : pin.length < 4}
               className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground disabled:opacity-40 aether-transition hover:opacity-90"
             >
-              {isSubmitting ? 'Setting up...' : isConfirm ? 'Confirm' : 'Next'}
+              {isConfirm ? 'Confirm' : 'Next'}
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
           <p className="mt-4 text-[11px] text-muted-foreground">
-            Your {credentialLabel} derives an AES-256 key to<br />encrypt all notes locally
+            Your PIN derives an AES-256 key to<br />encrypt all notes locally
           </p>
         </div>
       </div>
@@ -500,27 +382,6 @@ export function OnboardingWizard() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 space-y-2 rounded-2xl border p-4 ghost-card">
-              <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">Provider Keys</p>
-              <input
-                value={defaultProviderKey}
-                onChange={(e) => setDefaultProviderKey(e.target.value)}
-                placeholder="Default provider API key"
-                className="w-full rounded-xl border bg-muted px-3 py-2 text-sm outline-none focus:border-foreground/30"
-              />
-              <input
-                value={openAiProviderKey}
-                onChange={(e) => setOpenAiProviderKey(e.target.value)}
-                placeholder="OpenAI API key (optional)"
-                className="w-full rounded-xl border bg-muted px-3 py-2 text-sm outline-none focus:border-foreground/30"
-              />
-              <input
-                value={anthropicProviderKey}
-                onChange={(e) => setAnthropicProviderKey(e.target.value)}
-                placeholder="Anthropic API key (optional)"
-                className="w-full rounded-xl border bg-muted px-3 py-2 text-sm outline-none focus:border-foreground/30"
-              />
-            </div>
           </div>
         )}
 
@@ -531,20 +392,14 @@ export function OnboardingWizard() {
               <h2 className="text-xl font-semibold tracking-tight text-foreground">Secure your</h2>
               <h2 className="text-xl italic text-muted-foreground">vault.</h2>
               <p className="mt-3 text-sm text-muted-foreground">
-                Biometrics unlock first, password as fallback.
+                Biometrics unlock first, PIN as fallback.
               </p>
             </div>
             <div className="space-y-2">
               {SECURITY_OPTIONS.map((opt) => (
                 <button
                   key={opt.id}
-                  onClick={() => {
-                    setSecurity(opt.id);
-                    setCredential('');
-                    setCredentialConfirm('');
-                    setValidatedCredential('');
-                    setCredentialError('');
-                  }}
+                  onClick={() => setSecurity(opt.id)}
                   className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ghost-card aether-transition ${
                     security === opt.id ? 'border-foreground/30' : ''
                   }`}
@@ -651,13 +506,6 @@ export function OnboardingWizard() {
             Skip integrations
           </button>
         )}
-
-        {setupStatus && subStep === null ? (
-          <p className="mt-3 text-center text-xs text-muted-foreground">{setupStatus}</p>
-        ) : null}
-        {setupError && subStep === null ? (
-          <p className="mt-2 text-center text-xs text-destructive">{setupError}</p>
-        ) : null}
       </div>
     </div>
   );

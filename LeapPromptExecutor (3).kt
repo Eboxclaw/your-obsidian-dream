@@ -62,9 +62,6 @@ class LeapPromptExecutor(
     private val systemPrompt: String = "You are a helpful assistant.",
     private val cpuThreads: Int = 4
 ) {
-    // TODO: Review overlap with tauri-plugin-leap-ai android module and confirm
-    // whether this executor should route through plugin APIs for user chat paths.
-
     // Held alive for the lifetime of this executor.
     // If the ModelRunner is destroyed, conversations become read-only.
     private var modelRunner: ModelRunner? = null

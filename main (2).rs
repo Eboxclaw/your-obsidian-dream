@@ -3,6 +3,8 @@
 // Rust is the security gatekeeper. All business logic lives here.
 // Kotlin (Koog/EmbeddingPlugin) communicates via event bus.
 
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod notes;
 mod kanban;
 mod storage;
@@ -12,8 +14,6 @@ mod sri;
 mod event_system;
 mod scheduler;
 mod providers;
-mod commands;
-mod koog;
 mod google;
 mod oauth;
 
@@ -21,10 +21,8 @@ use storage::StorageState;
 use vault::VaultState;
 use event_system::EventSystem;
 use scheduler::Scheduler;
-use tauri::{Emitter, Listener};
-use tauri_plugin_leap_ai::LeapEvent;
 
-pub fn run() {
+fn main() {
     tauri::Builder::default()
         // ── Official plugins ──────────────────────────────────────────
         .plugin(tauri_plugin_leap_ai::init())
@@ -51,38 +49,6 @@ pub fn run() {
 
             // Register event bus listeners for Kotlin → Rust tool calls
             event_system::register_listeners(&handle);
-
-            // TODO: remove after confirming real tauri-plugin-leap-ai event names in device logs
-            {
-                let spy_handle = app.handle().clone();
-                app.listen_any(move |event| {
-                    log::debug!(
-                        "[vibo-event-spy] event=\"{}\" payload={:?}",
-                        event.event(),
-                        event.payload()
-                    );
-                });
-            }
-
-            let bridge_handle = app.handle().clone();
-            app.listen("leap-ai://event", move |event| {
-                if let Some(payload) = event.payload() {
-                    if let Ok(leap_event) = serde_json::from_str::<LeapEvent>(payload) {
-                        if leap_event.event_type == "token" {
-                            if let Some(token) = leap_event.token {
-                                let _ = bridge_handle.emit("llm-delta", token);
-                            }
-                        } else if leap_event.event_type == "done" {
-                            let _ = bridge_handle.emit("llm-done", leap_event.conversation_id);
-                        } else if leap_event.event_type == "error" {
-                            let _ = bridge_handle.emit("llm-error", leap_event.error);
-                        }
-                    }
-                }
-            });
-
-            #[cfg(target_os = "macos")]
-            crate::koog::start_jvm();
 
             Ok(())
         })
@@ -167,13 +133,15 @@ pub fn run() {
             sri::sri_embed_store,
             sri::sri_cache_query,
 
-            // ── Inference commands ────────────────────────────────────
-            commands::load_model,
-            commands::download_model,
-            commands::create_conversation,
-            commands::generate_text,
-            commands::stop_generation,
-            commands::unload_model,
+            // ── Provider commands ─────────────────────────────────────
+            providers::providers_stream,
+            providers::providers_list,
+            providers::providers_save,
+            providers::providers_delete,
+            providers::providers_test,
+            providers::keystore_get,
+            providers::keystore_set,
+            providers::keystore_delete,
 
             // ── Google commands ───────────────────────────────────────
             google::google_calendar_list,

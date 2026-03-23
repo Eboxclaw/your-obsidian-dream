@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useStore } from '@/lib/store';
-import type { KanbanCard } from '@/lib/types';
+import { useStore } from '@/store';
+import type { KanbanCard } from '@/types';
 import { GripVertical, CheckSquare, Square, Trash2 } from 'lucide-react';
 
 interface Props {
@@ -25,7 +25,7 @@ export function KanbanCardComponent({ card }: Props) {
   };
 
   const toggleSubtask = (subtaskId: string) => {
-    void updateCard(card.id, {
+    updateCard(card.id, {
       subtasks: card.subtasks.map((st) =>
         st.id === subtaskId ? { ...st, done: !st.done } : st
       ),
@@ -88,7 +88,7 @@ export function KanbanCardComponent({ card }: Props) {
           )}
         </div>
         <button
-          onClick={() => { void deleteCard(card.id); }}
+          onClick={() => deleteCard(card.id)}
           className="mt-0.5 shrink-0 text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 aether-transition"
         >
           <Trash2 className="h-3 w-3" />

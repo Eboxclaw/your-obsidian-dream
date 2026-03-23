@@ -1,13 +1,10 @@
 /**
  * leapClient.ts — Typed wrappers for tauri-plugin-leap-ai Kotlin plugin.
- * Handles embeddings, agent tool invocations, model lifecycle, and
- * streaming generation via the plugin bridge.
+ * Handles embeddings and agent tool invocations via the plugin bridge.
  *
  * All calls route through invoke('plugin:leap-ai|<command>').
- * No HTTP calls from the frontend. No API keys in frontend.
+ * No HTTP calls. No fetch(). No API keys in frontend.
  */
-
-import type { RuntimeInfo, CachedModel } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -30,78 +27,6 @@ async function pluginInvoke<T>(cmd: string, args?: Record<string, unknown>): Pro
   if (!(await isTauri())) return null;
   const { invoke } = await import('@tauri-apps/api/core');
   return invoke<T>(`plugin:leap-ai|${cmd}`, args);
-}
-
-// ---------------------------------------------------------------------------
-// Runtime info — device capability check
-// ---------------------------------------------------------------------------
-
-export async function runtimeInfo(): Promise<RuntimeInfo | null> {
-  return pluginInvoke<RuntimeInfo>('runtime_info');
-}
-
-// ---------------------------------------------------------------------------
-// Model lifecycle — LEAP orchestrator
-// ---------------------------------------------------------------------------
-
-export async function downloadModel(modelId: string): Promise<boolean | null> {
-  return pluginInvoke<boolean>('download_model', { modelId });
-}
-
-export async function loadModel(modelId: string): Promise<boolean | null> {
-  return pluginInvoke<boolean>('load_model', { modelId });
-}
-
-export async function loadCachedModel(modelId: string): Promise<boolean | null> {
-  return pluginInvoke<boolean>('load_cached_model', { modelId });
-}
-
-export async function listCachedModels(): Promise<CachedModel[] | null> {
-  return pluginInvoke<CachedModel[]>('list_cached_models');
-}
-
-export async function removeCachedModel(modelId: string): Promise<boolean | null> {
-  return pluginInvoke<boolean>('remove_cached_model', { modelId });
-}
-
-export async function unloadModel(): Promise<boolean | null> {
-  return pluginInvoke<boolean>('unload_model');
-}
-
-export interface ModelStatus {
-  loaded: boolean;
-  modelId: string | null;
-  memoryMb: number;
-}
-
-export async function modelStatus(): Promise<ModelStatus | null> {
-  return pluginInvoke<ModelStatus>('model_status');
-}
-
-// ---------------------------------------------------------------------------
-// Conversation management
-// ---------------------------------------------------------------------------
-
-export async function createConversation(systemPrompt: string): Promise<string | null> {
-  return pluginInvoke<string>('create_conversation', { systemPrompt });
-}
-
-export async function createConversationFromHistory(
-  messages: Array<{ role: string; content: string }>
-): Promise<string | null> {
-  return pluginInvoke<string>('create_conversation_from_history', { messages });
-}
-
-// ---------------------------------------------------------------------------
-// Streaming generation
-// ---------------------------------------------------------------------------
-
-export async function generate(conversationId: string, prompt: string): Promise<boolean | null> {
-  return pluginInvoke<boolean>('generate', { conversationId, prompt });
-}
-
-export async function stopGeneration(): Promise<boolean | null> {
-  return pluginInvoke<boolean>('stop_generation');
 }
 
 // ---------------------------------------------------------------------------
@@ -141,14 +66,24 @@ export async function agentStop(sessionId: string): Promise<boolean | null> {
   return pluginInvoke<boolean>('agent_stop', { sessionId });
 }
 
-export async function agentProcess(input: string): Promise<boolean | null> {
-  return pluginInvoke<boolean>('agent_process', { input });
+// ---------------------------------------------------------------------------
+// Model lifecycle — LEAP orchestrator
+// ---------------------------------------------------------------------------
+
+export async function modelLoad(modelId: string): Promise<boolean | null> {
+  return pluginInvoke<boolean>('model_load', { modelId });
 }
 
-export async function agentMemorySet(sessionId: string, content: string): Promise<boolean | null> {
-  return pluginInvoke<boolean>('agent_memory_set', { sessionId, content });
+export async function modelUnload(): Promise<boolean | null> {
+  return pluginInvoke<boolean>('model_unload');
 }
 
-export async function agentMemoryGet(sessionId: string): Promise<string | null> {
-  return pluginInvoke<string>('agent_memory_get', { sessionId });
+export interface ModelStatus {
+  loaded: boolean;
+  modelId: string | null;
+  memoryMb: number;
+}
+
+export async function modelStatus(): Promise<ModelStatus | null> {
+  return pluginInvoke<ModelStatus>('model_status');
 }

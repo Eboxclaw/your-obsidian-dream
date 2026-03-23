@@ -9,7 +9,7 @@ import {
   closestCorners,
   DragOverlay,
 } from '@dnd-kit/core';
-import { useStore } from '@/lib/store';
+import { useStore } from '@/store';
 import { KanbanColumnComponent } from '@/components/kanban/KanbanColumn';
 import { Plus } from 'lucide-react';
 
@@ -63,7 +63,7 @@ export function KanbanView() {
     }
 
     if (card.columnId !== targetColId || true) {
-      void moveCard(cardId, card.columnId, targetColId, targetIndex);
+      moveCard(cardId, card.columnId, targetColId, targetIndex);
     }
   };
 
@@ -75,9 +75,9 @@ export function KanbanView() {
     }
   };
 
-  const handleNewTask = async () => {
+  const handleNewTask = () => {
     if (board.columns[0]) {
-      await addCard(board.id, board.columns[0].id, 'New Task');
+      addCard(board.id, board.columns[0].id, 'New Task');
     }
   };
 

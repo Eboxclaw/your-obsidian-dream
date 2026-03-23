@@ -1,53 +1,22 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
-import { useStore } from '@/lib/store';
-import type { Note } from '@/lib/types';
+import { useStore } from '@/store';
+import type { Note } from '@/types';
 
 interface NoteEditorProps {
   note: Note;
 }
 
 export function NoteEditor({ note }: NoteEditorProps) {
-  const { updateNote, notes } = useStore();
-  const CONTENT_SAVE_DELAY_MS = 600;
+  const { updateNote, notes, setActiveNote, getNoteByTitle, addNote } = useStore();
   const [title, setTitle] = useState(note.title);
   const [showWikiSearch, setShowWikiSearch] = useState(false);
   const [wikiQuery, setWikiQuery] = useState('');
   const [wikiResults, setWikiResults] = useState<Note[]>([]);
   const [selectedWikiIdx, setSelectedWikiIdx] = useState(0);
-  const contentSaveTimerRef = useRef<number | null>(null);
-  const pendingContentRef = useRef(note.content);
-  const pendingTitleRef = useRef(note.title);
-
-  const flushContentSave = useCallback(async () => {
-    if (contentSaveTimerRef.current !== null) {
-      window.clearTimeout(contentSaveTimerRef.current);
-      contentSaveTimerRef.current = null;
-    }
-
-    const pendingContent = pendingContentRef.current;
-    if (pendingContent === note.content) return;
-    await updateNote(note.id, { content: pendingContent });
-  }, [note.content, note.id, updateNote]);
-
-  const scheduleContentSave = useCallback((content: string) => {
-    pendingContentRef.current = content;
-    if (contentSaveTimerRef.current !== null) {
-      window.clearTimeout(contentSaveTimerRef.current);
-    }
-    contentSaveTimerRef.current = window.setTimeout(() => {
-      void flushContentSave();
-    }, CONTENT_SAVE_DELAY_MS);
-  }, [flushContentSave]);
-
-  const saveTitleIfChanged = useCallback(async () => {
-    const pendingTitle = pendingTitleRef.current;
-    if (pendingTitle === note.title) return;
-    await updateNote(note.id, { title: pendingTitle });
-  }, [note.id, note.title, updateNote]);
 
   const editor = useEditor({
     extensions: [
@@ -84,7 +53,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
     },
     onUpdate: ({ editor }) => {
       const content = editor.getHTML();
-      scheduleContentSave(content);
+      updateNote(note.id, { content });
 
       // Check for wikilink typing
       if (showWikiSearch) {
@@ -114,31 +83,19 @@ export function NoteEditor({ note }: NoteEditorProps) {
     if (editor && note.content !== editor.getHTML()) {
       editor.commands.setContent(note.content);
     }
-    pendingContentRef.current = note.content;
-    pendingTitleRef.current = note.title;
     setTitle(note.title);
-    return () => {
-      void flushContentSave();
-      void saveTitleIfChanged();
-    };
-  }, [editor, flushContentSave, note.content, note.id, note.title, saveTitleIfChanged]);
+  }, [note.id]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const nextTitle = e.target.value;
-    setTitle(nextTitle);
-    pendingTitleRef.current = nextTitle;
+    setTitle(e.target.value);
+    updateNote(note.id, { title: e.target.value });
   };
 
   const handleTitleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault();
-      void saveTitleIfChanged();
-      if (editor) editor.commands.focus();
+      editor?.commands.focus();
     }
-  };
-
-  const handleTitleBlur = () => {
-    void saveTitleIfChanged();
   };
 
   const insertWikilink = useCallback(
@@ -197,7 +154,6 @@ export function NoteEditor({ note }: NoteEditorProps) {
           value={title}
           onChange={handleTitleChange}
           onKeyDown={handleTitleKeyDown}
-          onBlur={handleTitleBlur}
           placeholder="Untitled"
           className="mb-6 w-full bg-transparent text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground"
           autoFocus={title === 'Untitled'}

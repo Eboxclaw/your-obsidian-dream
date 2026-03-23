@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore } from '@/lib/store';
+import { useStore } from '@/store';
 import { Plus, X, FileText, CheckSquare, FolderPlus, Lock, ArrowLeft, FolderOpen, ChevronRight } from 'lucide-react';
 
 const CREATE_OPTIONS = [
@@ -23,15 +23,12 @@ export function FABMenu() {
   const [step, setStep] = useState<Step>('menu');
   const [newFolderName, setNewFolderName] = useState('');
 
-  // Dynamic FAB position: shift up when chat sheet is open
-  const fabBottom = ui.inlineAgentOpen ? 'bottom-[calc(72vh+1rem)]' : 'bottom-[7.5rem]';
-
-  const handleCreate = async (type: string) => {
+  const handleCreate = (type: string) => {
     if (type === 'note') { setStep('template'); return; }
     if (type === 'task') {
       const board = boards[0];
       if (board && board.columns[0]) {
-        await addCard(board.id, board.columns[0].id, 'New Task');
+        addCard(board.id, board.columns[0].id, 'New Task');
         setView('kanban');
       }
       handleClose();
@@ -39,33 +36,27 @@ export function FABMenu() {
     }
     if (type === 'folder') { setStep('folder'); return; }
     if (type === 'secret') {
-      const note = await addNote('Private Note', null, true);
-      if (note) {
-        setActiveNote(note.id);
-        setView('notebook');
-      }
+      const note = addNote('Private Note', null, true);
+      setActiveNote(note.id);
+      setView('notebook');
       handleClose();
       return;
     }
   };
 
-  const handleTemplate = async (template: typeof NOTE_TEMPLATES[0]) => {
-    const note = await addNote(template.label === 'Blank' ? 'Untitled' : template.label);
-    if (note) {
-      setActiveNote(note.id);
-      setView('notebook');
-    }
+  const handleTemplate = (template: typeof NOTE_TEMPLATES[0]) => {
+    const note = addNote(template.label === 'Blank' ? 'Untitled' : template.label);
+    setActiveNote(note.id);
+    setView('notebook');
     handleClose();
   };
 
-  const handleCreateFolder = async () => {
+  const handleCreateFolder = () => {
     if (newFolderName.trim()) {
-      const folder = await addFolder(newFolderName.trim());
-      if (folder) {
-        setActiveFolder(folder.id);
-        setNewFolderName('');
-        handleClose();
-      }
+      const folder = addFolder(newFolderName.trim());
+      setActiveFolder(folder.id);
+      setNewFolderName('');
+      handleClose();
     }
   };
 
@@ -82,10 +73,10 @@ export function FABMenu() {
 
   return (
     <>
-      {/* FAB Button */}
+      {/* FAB Button — fixed bottom-LEFT corner */}
       <button
         onClick={ui.fabOpen ? handleClose : toggleFab}
-        className={`fixed ${fabBottom} right-5 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-lg aether-transition ${
+        className={`fixed bottom-[7.5rem] right-5 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-lg aether-transition ${
           ui.fabOpen
             ? 'bg-muted text-foreground rotate-45'
             : 'bg-accent text-accent-foreground'
