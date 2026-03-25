@@ -123,21 +123,18 @@
   }
 }
 
-/* Logo glow — subtle purple, the only accent splash */
+/* Logo glow — subtle neutral */
 .logo-glow {
-  filter: drop-shadow(0 0 6px hsl(var(--glow-color) / 0.4))
-          drop-shadow(0 0 16px hsl(var(--glow-color) / 0.15));
+  filter: drop-shadow(0 0 4px hsl(var(--foreground) / 0.08));
   animation: ghost-pulse 4s ease-in-out infinite;
 }
 
 @keyframes ghost-pulse {
   0%, 100% {
-    filter: drop-shadow(0 0 6px hsl(var(--glow-color) / 0.4))
-            drop-shadow(0 0 16px hsl(var(--glow-color) / 0.15));
+    filter: drop-shadow(0 0 4px hsl(var(--foreground) / 0.08));
   }
   50% {
-    filter: drop-shadow(0 0 10px hsl(var(--glow-color) / 0.6))
-            drop-shadow(0 0 24px hsl(var(--glow-color) / 0.25));
+    filter: drop-shadow(0 0 8px hsl(var(--foreground) / 0.12));
   }
 }
 
@@ -165,7 +162,7 @@
 .smoke-particle {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, hsl(var(--glow-color) / 0.15), transparent 70%);
+  background: radial-gradient(circle, hsl(var(--smoke-color) / 0.12), transparent 70%);
   pointer-events: none;
   animation: smoke-drift 5s ease-out infinite;
 }
@@ -173,7 +170,7 @@
 .smoke-particle-slow {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, hsl(var(--glow-color) / 0.08), transparent 70%);
+  background: radial-gradient(circle, hsl(var(--smoke-color) / 0.06), transparent 70%);
   pointer-events: none;
   animation: smoke-drift-slow 7s ease-out infinite;
 }
@@ -183,8 +180,8 @@
   transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ghost-card:hover {
-  box-shadow: 0 0 16px hsl(var(--glow-color) / 0.06),
-              0 2px 8px hsl(var(--glow-color) / 0.03);
+  box-shadow: 0 1px 6px hsl(var(--foreground) / 0.04),
+              0 1px 3px hsl(var(--foreground) / 0.02);
 }
 
 /* Accent dot — the small purple marker */
