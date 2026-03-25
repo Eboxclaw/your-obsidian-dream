@@ -165,7 +165,7 @@
 .smoke-particle {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, hsl(var(--glow-color) / 0.15), transparent 70%);
+  background: radial-gradient(circle, hsl(var(--smoke-color) / 0.12), transparent 70%);
   pointer-events: none;
   animation: smoke-drift 5s ease-out infinite;
 }
@@ -173,7 +173,7 @@
 .smoke-particle-slow {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, hsl(var(--glow-color) / 0.08), transparent 70%);
+  background: radial-gradient(circle, hsl(var(--smoke-color) / 0.06), transparent 70%);
   pointer-events: none;
   animation: smoke-drift-slow 7s ease-out infinite;
 }
