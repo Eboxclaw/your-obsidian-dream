@@ -123,21 +123,18 @@
   }
 }
 
-/* Logo glow — subtle purple, the only accent splash */
+/* Logo glow — subtle neutral */
 .logo-glow {
-  filter: drop-shadow(0 0 6px hsl(var(--glow-color) / 0.4))
-          drop-shadow(0 0 16px hsl(var(--glow-color) / 0.15));
+  filter: drop-shadow(0 0 4px hsl(var(--foreground) / 0.08));
   animation: ghost-pulse 4s ease-in-out infinite;
 }
 
 @keyframes ghost-pulse {
   0%, 100% {
-    filter: drop-shadow(0 0 6px hsl(var(--glow-color) / 0.4))
-            drop-shadow(0 0 16px hsl(var(--glow-color) / 0.15));
+    filter: drop-shadow(0 0 4px hsl(var(--foreground) / 0.08));
   }
   50% {
-    filter: drop-shadow(0 0 10px hsl(var(--glow-color) / 0.6))
-            drop-shadow(0 0 24px hsl(var(--glow-color) / 0.25));
+    filter: drop-shadow(0 0 8px hsl(var(--foreground) / 0.12));
   }
 }
 
