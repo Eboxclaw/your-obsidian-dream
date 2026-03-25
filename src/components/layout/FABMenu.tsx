@@ -23,8 +23,8 @@ export function FABMenu() {
   const [step, setStep] = useState<Step>('menu');
   const [newFolderName, setNewFolderName] = useState('');
 
-  // FAB shifts up when inline agent is expanded
-  const fabBottom = ui.inlineAgentOpen ? 'bottom-[calc(50vh+1rem)]' : 'bottom-[7.5rem]';
+  // FAB always sits just above the inline agent bar
+  const fabBottom = 'bottom-[7.5rem]';
 
   const handleCreate = (type: string) => {
     if (type === 'note') { setStep('template'); return; }

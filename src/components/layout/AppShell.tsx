@@ -44,7 +44,7 @@ export function AppShell() {
 
   // App-level biometric lock
   const [appUnlocked, setAppUnlocked] = useState(false);
-  const [biometricAttempted, setBiometricAttempted] = useState(false);
+  const [unlockMode, setUnlockMode] = useState<'choose' | 'biometric-pending' | 'biometric-done' | 'pin'>('choose');
 
   if (!onboarding.completed) {
     return <OnboardingWizard />;
@@ -55,7 +55,7 @@ export function AppShell() {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
         <div className="w-full max-w-xs mx-4 rounded-3xl border bg-card p-8 text-center shadow-xl animate-fade-in">
-          {!biometricAttempted ? (
+          {unlockMode === 'choose' && (
             <>
               <div className="mb-5 flex justify-center">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-border bg-muted">
@@ -68,27 +68,53 @@ export function AppShell() {
               </p>
               <button
                 onClick={() => {
-                  setBiometricAttempted(true);
-                  setTimeout(() => setAppUnlocked(true), 800);
+                  setUnlockMode('biometric-pending');
+                  setTimeout(() => {
+                    setUnlockMode('biometric-done');
+                    setTimeout(() => setAppUnlocked(true), 1000);
+                  }, 800);
                 }}
                 className="mt-6 w-full rounded-2xl bg-primary py-3.5 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
               >
                 Unlock with Biometrics
               </button>
               <button
-                onClick={() => setBiometricAttempted(true)}
+                onClick={() => setUnlockMode('pin')}
                 className="mt-3 w-full rounded-2xl border py-3 text-sm text-muted-foreground hover:text-foreground aether-transition"
               >
                 Use PIN
               </button>
             </>
-          ) : !appUnlocked ? (
+          )}
+          {unlockMode === 'biometric-pending' && (
+            <>
+              <div className="mb-5 flex justify-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-border bg-muted animate-pulse">
+                  <Fingerprint className="h-10 w-10 text-foreground" />
+                </div>
+              </div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">Authenticating…</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Place your finger on the sensor</p>
+            </>
+          )}
+          {unlockMode === 'biometric-done' && (
+            <>
+              <div className="mb-5 flex justify-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-accent bg-accent/10">
+                  <Shield className="h-10 w-10 text-accent" />
+                </div>
+              </div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">Unlocked</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Welcome back</p>
+            </>
+          )}
+          {unlockMode === 'pin' && (
             <>
               <h2 className="text-lg font-semibold tracking-tight text-foreground mb-2">Enter PIN</h2>
               <input
                 type="password"
                 placeholder="PIN"
-                className="w-full rounded-xl border bg-background px-4 py-3 text-center text-sm outline-none focus:border-accent aether-transition"
+                className="w-full rounded-xl border bg-background px-4 py-3 text-center text-sm outline-none focus:border-foreground/30 aether-transition"
                 autoFocus
                 onKeyDown={(e) => { if (e.key === 'Enter') setAppUnlocked(true); }}
               />
@@ -98,8 +124,14 @@ export function AppShell() {
               >
                 Unlock
               </button>
+              <button
+                onClick={() => setUnlockMode('choose')}
+                className="mt-2 w-full text-xs text-muted-foreground hover:text-foreground aether-transition"
+              >
+                Back
+              </button>
             </>
-          ) : null}
+          )}
         </div>
       </div>
     );
