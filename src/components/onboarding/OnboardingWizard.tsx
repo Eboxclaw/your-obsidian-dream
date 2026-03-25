@@ -19,6 +19,7 @@ import {
   EyeOff,
   X,
   CheckCircle2,
+  ExternalLink,
 } from 'lucide-react';
 import { SmokeParticles } from '@/components/effects/SmokeParticles';
 
@@ -31,7 +32,7 @@ const LOCAL_MODELS = [
 ];
 
 const INTEGRATIONS = [
-  { id: 'calendar', name: 'Calendar', desc: 'Sync events & reminders', icon: Calendar },
+  { id: 'calendar', name: 'Google Calendar', desc: 'Sync events & reminders', icon: Calendar },
   { id: 'gmail', name: 'Gmail', desc: 'Email integration', icon: Mail },
 ];
 
@@ -66,11 +67,31 @@ export function OnboardingWizard() {
   const [subStep, setSubStep] = useState<SubStep | null>(null);
   const [pinError, setPinError] = useState('');
   const [biometricDone, setBiometricDone] = useState(false);
+  const [oauthPending, setOauthPending] = useState<string | null>(null);
+  const [oauthAuthorized, setOauthAuthorized] = useState<Record<string, boolean>>({});
 
   const totalSteps = 5;
 
   const toggleIntegration = (id: string) => {
-    setIntegrations((prev) => ({ ...prev, [id]: !prev[id] }));
+    // If turning ON, show OAuth card first
+    if (!integrations[id]) {
+      setOauthPending(id);
+    } else {
+      setIntegrations((prev) => ({ ...prev, [id]: false }));
+      setOauthAuthorized((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const handleOauthConfirm = () => {
+    if (oauthPending) {
+      setIntegrations((prev) => ({ ...prev, [oauthPending]: true }));
+      setOauthAuthorized((prev) => ({ ...prev, [oauthPending]: true }));
+      setOauthPending(null);
+    }
+  };
+
+  const handleOauthCancel = () => {
+    setOauthPending(null);
   };
 
   const canProceed = () => {
@@ -83,7 +104,7 @@ export function OnboardingWizard() {
       name,
       role: 'general' as UserRole,
       workspaceName: 'My Vault',
-      theme: 'dark',
+      theme: 'light',
       features: ['wikilinks', 'kanban', 'graph', 'ai'],
     });
     completeOnboarding();
@@ -95,7 +116,6 @@ export function OnboardingWizard() {
     } else if (step < 5) {
       setStep(step + 1);
     } else if (step === 5 && !subStep) {
-      // After name, go to PIN setup
       setSubStep('pin');
     }
   };
@@ -112,7 +132,6 @@ export function OnboardingWizard() {
         return;
       }
       setPinError('');
-      // If biometrics selected, show biometric popup
       if (security === 'biometrics') {
         setSubStep('biometric');
       } else {
@@ -290,8 +309,64 @@ export function OnboardingWizard() {
     );
   }
 
+  // Google OAuth confirmation card overlay
+  const oauthIntegration = oauthPending ? INTEGRATIONS.find((i) => i.id === oauthPending) : null;
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
+      {/* OAuth confirmation overlay */}
+      {oauthPending && oauthIntegration && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-background/80 backdrop-blur-sm" onClick={handleOauthCancel}>
+          <div className="w-full max-w-xs mx-4 rounded-3xl border bg-card p-6 text-center shadow-xl animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={handleOauthCancel}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="mb-4 flex justify-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                <oauthIntegration.icon className="h-7 w-7 text-foreground" />
+              </div>
+            </div>
+            <h3 className="text-base font-semibold text-foreground">Connect {oauthIntegration.name}</h3>
+            <p className="mt-2 text-xs text-muted-foreground">
+              ViBo needs permission to access your {oauthIntegration.name} data. You'll be redirected to Google to authorize.
+            </p>
+            <div className="mt-4 rounded-xl border bg-muted/50 p-3 text-left">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Permissions requested</p>
+              <ul className="space-y-1.5 text-xs text-foreground">
+                {oauthPending === 'calendar' && (
+                  <>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-accent shrink-0" /> View your calendars</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-accent shrink-0" /> Create & edit events</li>
+                  </>
+                )}
+                {oauthPending === 'gmail' && (
+                  <>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-accent shrink-0" /> Read email messages</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-accent shrink-0" /> Send emails on your behalf</li>
+                  </>
+                )}
+              </ul>
+            </div>
+            <button
+              onClick={handleOauthConfirm}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-sm font-medium text-primary-foreground aether-transition hover:opacity-90"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Authorize with Google
+            </button>
+            <button
+              onClick={handleOauthCancel}
+              className="mt-2 w-full rounded-2xl border py-2.5 text-xs text-muted-foreground hover:text-foreground aether-transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="relative w-full max-w-sm px-6">
         {/* Progress bar */}
         <div className="mb-6 flex items-center justify-center gap-2">
@@ -325,8 +400,8 @@ export function OnboardingWizard() {
                 <button
                   key={model.id}
                   onClick={() => setSelectedModel(model.id)}
-                  className={`flex w-full items-start gap-3 rounded-2xl border p-4 text-left ghost-card aether-transition ${
-                    selectedModel === model.id ? 'border-foreground/30' : ''
+                  className={`flex w-full items-start gap-3 rounded-2xl border p-4 text-left aether-transition ${
+                    selectedModel === model.id ? 'border-foreground/30 bg-muted/50' : ''
                   }`}
                 >
                   <div className="flex-1 min-w-0">
@@ -356,13 +431,18 @@ export function OnboardingWizard() {
               {INTEGRATIONS.map((intg) => (
                 <div
                   key={intg.id}
-                  className="flex items-center justify-between rounded-2xl border p-4 ghost-card"
+                  className="flex items-center justify-between rounded-2xl border p-4"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <intg.icon className="h-5 w-5 text-muted-foreground shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground">{intg.name}</p>
                       <p className="text-[11px] text-muted-foreground">{intg.desc}</p>
+                      {oauthAuthorized[intg.id] && (
+                        <p className="text-[10px] text-accent flex items-center gap-1 mt-0.5">
+                          <CheckCircle2 className="h-3 w-3" /> Authorized
+                        </p>
+                      )}
                     </div>
                   </div>
                   <button
@@ -400,8 +480,8 @@ export function OnboardingWizard() {
                 <button
                   key={opt.id}
                   onClick={() => setSecurity(opt.id)}
-                  className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ghost-card aether-transition ${
-                    security === opt.id ? 'border-foreground/30' : ''
+                  className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left aether-transition ${
+                    security === opt.id ? 'border-foreground/30 bg-muted/50' : ''
                   }`}
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted shrink-0">
@@ -437,8 +517,8 @@ export function OnboardingWizard() {
                 <button
                   key={a.id}
                   onClick={() => setAgent(a.id)}
-                  className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ghost-card aether-transition ${
-                    agent === a.id ? 'border-foreground/30' : ''
+                  className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left aether-transition ${
+                    agent === a.id ? 'border-foreground/30 bg-muted/50' : ''
                   }`}
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-lg shrink-0">
